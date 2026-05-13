@@ -1,4 +1,4 @@
-package com.example.fonosshoppee; // Đổi lại đúng package của bạn
+package com.example.fonosshoppee;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,7 +12,7 @@ public class BooksFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Gắn layout fragment_books.xml vào class này
+
         return inflater.inflate(R.layout.fragment_books, container, false);
     }
 }

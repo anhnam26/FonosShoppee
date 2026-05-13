@@ -1,4 +1,4 @@
-package com.example.fonosshoppee; // Đổi lại đúng package của bạn
+package com.example.fonosshoppee;
 
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -17,19 +17,19 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
-        // Hiển thị Fragment Sách làm mặc định khi vừa mở app
+        //Fragment Sách mặc định
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new BooksFragment()).commit();
         }
 
-        // Xử lý sự kiện click trên thanh điều hướng
+        //click
         bottomNav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 Fragment selectedFragment = null;
                 int itemId = item.getItemId();
 
-                // Dùng if-else thay vì switch-case để tránh lỗi Constant Expression trong các phiên bản Android Studio mới
+
                 if (itemId == R.id.nav_books) {
                     selectedFragment = new BooksFragment();
                 } else if (itemId == R.id.nav_podcourse) {
@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new LibraryFragment();
                 }
 
-                // Thực hiện chuyển đổi màn hình (Fragment)
+                //chuyển đổi Fragment
                 if (selectedFragment != null) {
                     getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selectedFragment).commit();
                 }
