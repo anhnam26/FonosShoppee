@@ -5,6 +5,12 @@ import android.view.MenuItem;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+
+import com.example.fonosshoppee.Main.ChallengeFragment;
+import com.example.fonosshoppee.Main.DiscoverFragment;
+import com.example.fonosshoppee.Main.LibraryFragment;
+import com.example.fonosshoppee.Main.PodCourseFragment;
+import com.example.fonosshoppee.Main.BooksFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 
