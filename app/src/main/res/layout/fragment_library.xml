@@ -1,14 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:background="#2E3A59">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:id="@+id/headerTop"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Đây là màn hình của mục Thư viện"
-        android:textSize="24sp"
-        android:textStyle="bold" />
-</LinearLayout>
+        android:paddingHorizontal="16dp"
+        android:paddingTop="40dp"
+        android:paddingBottom="16dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thư viện"
+            android:textColor="@android:color/white"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:text="🔍"
+                android:textSize="20sp" />
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/ic_launcher_background" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvLibraryMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/headerTop"
+        android:layout_marginBottom="16dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="12dp" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/rvLibraryMenu"
+        android:background="@drawable/bg_rounded_top">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvLibraryBooks"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="24dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutEmptyState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="32dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🧑‍🚀📦"
+                android:textSize="80sp" />
+
+            <TextView
+                android:id="@+id/tvEmptyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Tiêu đề trống"
+                android:textColor="#1B263B"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textAlignment="center"/>
+
+            <TextView
+                android:id="@+id/tvEmptyDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Mô tả trống"
+                android:textColor="#6B7280"
+                android:textSize="14sp"
+                android:textAlignment="center"
+                android:lineSpacingExtra="4dp"/>
+
+            <TextView
+                android:id="@+id/btnEmptyAction"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_gradient_orange"
+                android:gravity="center"
+                android:text="Tìm hiểu về Hội viên"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/tvEmptyTooltip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:background="#D2935D"
+                android:padding="24dp"
+                android:text="🔖 Hướng dẫn đánh dấu sẽ hiển thị ở đây"
+                android:textColor="@android:color/white"
+                android:textAlignment="center"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </RelativeLayout>
+</RelativeLayout>
