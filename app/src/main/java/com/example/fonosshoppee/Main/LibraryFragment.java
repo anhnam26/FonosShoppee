@@ -21,7 +21,6 @@ import java.util.List;
 
 public class LibraryFragment extends Fragment {
 
-    // Khai báo các view để thay đổi giao diện
     private RecyclerView rvBooks;
     private LinearLayout layoutEmpty;
     private TextView tvEmptyTitle, tvEmptyDesc, btnEmptyAction, tvEmptyTooltip;
@@ -38,7 +37,6 @@ public class LibraryFragment extends Fragment {
         btnEmptyAction = view.findViewById(R.id.btnEmptyAction);
         tvEmptyTooltip = view.findViewById(R.id.tvEmptyTooltip);
 
-        // 1. Cài đặt Menu ngang
         RecyclerView rvMenu = view.findViewById(R.id.rvLibraryMenu);
         rvMenu.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
@@ -58,7 +56,6 @@ public class LibraryFragment extends Fragment {
         });
         rvMenu.setAdapter(menuAdapter);
 
-        // 2. Cài đặt Danh sách Sách (Mặc định cho mục Gần đây)
         rvBooks.setLayoutManager(new LinearLayoutManager(getContext()));
         List<LibBookItem> bookList = new ArrayList<>();
         bookList.add(new LibBookItem("Một Đời Quản Trị", "Phan Văn Trường", "#1976D2"));
@@ -68,9 +65,8 @@ public class LibraryFragment extends Fragment {
         return view;
     }
 
-    // Hàm điều khiển thay đổi nội dung khi bấm vào menu
     private void updateContentArea(String menuName) {
-        // Reset ẩn hết các nút và tooltip đặc biệt
+
         btnEmptyAction.setVisibility(View.GONE);
         tvEmptyTooltip.setVisibility(View.GONE);
 
@@ -85,7 +81,7 @@ public class LibraryFragment extends Fragment {
                 case "Đã mua":
                     tvEmptyTitle.setText("Bạn chưa mua nội dung nào");
                     tvEmptyDesc.setText("Nội dung mua bằng thẻ Fonos sẽ hiển thị ở đây và thuộc về bạn mãi mãi.\n\nBạn nhận được thẻ Fonos khi là Hội viên.");
-                    btnEmptyAction.setVisibility(View.VISIBLE); // Hiện nút màu cam
+                    btnEmptyAction.setVisibility(View.VISIBLE);
                     break;
                 case "Đã tải":
                     tvEmptyTitle.setText("Bạn chưa tải nội dung nào");
@@ -98,7 +94,7 @@ public class LibraryFragment extends Fragment {
                 case "Đánh dấu":
                     tvEmptyTitle.setText("Bạn chưa có đánh dấu nào");
                     tvEmptyDesc.setText("Khi bắt gặp một đoạn tâm đắc, bạn có thể đánh dấu để nghe lại dễ dàng.");
-                    tvEmptyTooltip.setVisibility(View.VISIBLE); // Hiện hình ảnh hướng dẫn
+                    tvEmptyTooltip.setVisibility(View.VISIBLE);
                     break;
                 case "Lưu trữ":
                     tvEmptyTitle.setText("Bạn chưa lưu trữ nội dung nào");
@@ -108,12 +104,12 @@ public class LibraryFragment extends Fragment {
         }
     }
 
-    // ================= INTERFACE LẮNG NGHE SỰ KIỆN CLICK =================
+    //INTERFACE LẮNG NGHE SỰ KIỆN CLICK
     public interface OnMenuClickListener {
         void onMenuClick(int position, String menuName);
     }
 
-    // ================= CLASS MODEL & ADAPTER CHO MENU =================
+    //CLASS MODEL & ADAPTER CHO MENU
     public static class MenuItem {
         String emoji, name; boolean isSelected;
         public MenuItem(String emoji, String name, boolean isSelected) {
@@ -124,7 +120,7 @@ public class LibraryFragment extends Fragment {
     public static class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder> {
         List<MenuItem> list;
         OnMenuClickListener listener;
-        int selectedPosition = 0; // Biến lưu vị trí đang được chọn
+        int selectedPosition = 0;
 
         public MenuAdapter(List<MenuItem> list, OnMenuClickListener listener) {
             this.list = list;
@@ -151,14 +147,14 @@ public class LibraryFragment extends Fragment {
                 holder.circleBg.setBackground(shape);
             }
 
-            // Bắt sự kiện Click
+            //Click
             holder.itemView.setOnClickListener(v -> {
                 int previousPos = selectedPosition;
                 selectedPosition = holder.getAdapterPosition();
-                // Báo cho Adapter biết để vẽ lại màu sắc của vòng tròn
+
                 notifyItemChanged(previousPos);
                 notifyItemChanged(selectedPosition);
-                // Báo cho Fragment biết để đổi nội dung
+
                 listener.onMenuClick(selectedPosition, item.name);
             });
         }
@@ -175,8 +171,8 @@ public class LibraryFragment extends Fragment {
         }
     }
 
-    // ================= CLASS MODEL & ADAPTER CHO SÁCH =================
-    // (Giữ nguyên không thay đổi logic phần này)
+    //CLASS MODEL & ADAPTER CHO SÁCH
+
     public static class LibBookItem {
         String title, author, colorHex;
         public LibBookItem(String title, String author, String colorHex) {

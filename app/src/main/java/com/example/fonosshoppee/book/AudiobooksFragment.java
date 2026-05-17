@@ -1,4 +1,4 @@
-package com.example.fonosshoppee.book; // Đảm bảo đúng package của bạn
+package com.example.fonosshoppee.book;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

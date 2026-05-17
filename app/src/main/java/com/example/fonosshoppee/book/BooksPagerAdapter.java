@@ -17,9 +17,9 @@ public class BooksPagerAdapter extends FragmentStateAdapter {
             case 0:
                 return new AudiobooksFragment();
             case 1:
-                return new EbooksFragment(); // Fragment bạn tự tạo tương tự Audiobooks
+                return new EbooksFragment();
             case 2:
-                return new SummariesFragment(); // Fragment bạn tự tạo tương tự Audiobooks
+                return new SummariesFragment();
             default:
                 return new AudiobooksFragment();
         }
