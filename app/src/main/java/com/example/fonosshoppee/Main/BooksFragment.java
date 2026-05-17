@@ -24,11 +24,11 @@ public class BooksFragment extends Fragment {
         TabLayout tabLayout = view.findViewById(R.id.tabLayout);
         ViewPager2 viewPager = view.findViewById(R.id.viewPager);
 
-        // Set adapter cho ViewPager2
+        //adapter ViewPager2
         BooksPagerAdapter pagerAdapter = new BooksPagerAdapter(this);
         viewPager.setAdapter(pagerAdapter);
 
-        // Liên kết TabLayout với ViewPager2
+        //TabLayout link ViewPager2
         new TabLayoutMediator(tabLayout, viewPager, new TabLayoutMediator.TabConfigurationStrategy() {
             @Override
             public void onConfigureTab(@NonNull TabLayout.Tab tab, int position) {

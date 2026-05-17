@@ -1,4 +1,4 @@
-package com.example.fonosshoppee.Main; // Đổi lại đúng tên package của bạn
+package com.example.fonosshoppee.Main;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -27,28 +27,24 @@ public class ChallengeFragment extends Fragment {
         RecyclerView rvChallenges = view.findViewById(R.id.rvChallenges);
         rvChallenges.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // 1. Tạo Data giả dựa trên hình ảnh
         List<ChallengeItem> list = new ArrayList<>();
 
-        // Thử thách có nút Khám phá
         list.add(new ChallengeItem("⏳", "Nghe Fonos 5 phút.", "0/5", "Khám phá Sách nói >", false));
         list.add(new ChallengeItem("🎬", "Xem 1 trailer PodCourse.", "0/1", "Khám phá PodCourse >", false));
 
-        // Thử thách không có nút
         list.add(new ChallengeItem("🔥", "Nghe Fonos 60 phút.", "0/60", null, false));
 
-        // Thử thách đã hoàn thành (isCompleted = true)
         list.add(new ChallengeItem("🔑", "Truy cập vào Fonos 3 ngày\nliên tiếp.", "", null, true));
         list.add(new ChallengeItem("🔑", "Đăng nhập vào Fonos.", "", null, true));
 
-        // 2. Set Adapter
+        //Set Adapter
         ChallengeAdapter adapter = new ChallengeAdapter(list);
         rvChallenges.setAdapter(adapter);
 
         return view;
     }
 
-    // ================= CLASS MODEL =================
+    //CLASS MODEL
     public static class ChallengeItem {
         String emoji, title, progressText, actionButtonText;
         boolean isCompleted;
@@ -62,7 +58,7 @@ public class ChallengeFragment extends Fragment {
         }
     }
 
-    // ================= CLASS ADAPTER =================
+    //CLASS ADAPTER
     public static class ChallengeAdapter extends RecyclerView.Adapter<ChallengeAdapter.ViewHolder> {
         List<ChallengeItem> items;
         public ChallengeAdapter(List<ChallengeItem> items) { this.items = items; }
@@ -79,7 +75,7 @@ public class ChallengeFragment extends Fragment {
             holder.tvEmoji.setText(item.emoji);
             holder.tvTitle.setText(item.title);
 
-            // Xử lý Vòng tròn tiến độ
+            //tiến độ
             if (item.isCompleted) {
                 holder.tvProgress.setText("✔"); // Thay bằng dấu tick
                 holder.tvProgress.setTextColor(Color.parseColor("#F25B3E")); // Màu cam Fonos
@@ -90,7 +86,7 @@ public class ChallengeFragment extends Fragment {
                 holder.tvProgress.setTextSize(14);
             }
 
-            // Xử lý Nút Khám phá
+            //Khám phá
             if (item.actionButtonText != null && !item.actionButtonText.isEmpty()) {
                 holder.tvActionButton.setVisibility(View.VISIBLE);
                 holder.tvActionButton.setText(item.actionButtonText);

@@ -1,4 +1,4 @@
-package com.example.fonosshoppee.Main; // Đổi lại package của bạn
+package com.example.fonosshoppee.Main;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -26,11 +26,9 @@ public class PodCourseFragment extends Fragment {
         RecyclerView rvMain = view.findViewById(R.id.rvMainPodCourse);
         rvMain.setLayoutManager(new LinearLayoutManager(getContext())); // Cuộn dọc
 
-        // 1. Tạo Data giả cho khoá học (Thay vì ảnh, chỉ cần truyền text)
         List<String> podList1 = new ArrayList<>();
         for (int i=1; i<=5; i++) podList1.add("Khóa học " + i);
 
-        // 2. Gom vào các Danh mục
         List<PodCategory> categories = new ArrayList<>();
         categories.add(new PodCategory("PodCourse miễn phí", "Dành Cho Hội Viên", podList1));
         categories.add(new PodCategory("", "PodCourse Mới Ra Mắt", podList1));
@@ -39,16 +37,14 @@ public class PodCourseFragment extends Fragment {
         categories.add(new PodCategory("Chia sẻ từ chuyên gia", "Phát Triển Cá Nhân \uD83C\uDFAF", podList1));
         categories.add(new PodCategory("Từ kinh nghiệm được đúc kết", "Sức Khỏe \uD83C\uDF31", podList1));
 
-        // 3. Set Adapter
+        //Set Adapter
         MainCategoryAdapter adapter = new MainCategoryAdapter(categories);
         rvMain.setAdapter(adapter);
 
         return view;
     }
 
-    // ================= CÁC CLASS HỖ TRỢ (NÊN TÁCH RA FILE RIÊNG SAU NÀY) =================
 
-    // Model dữ liệu Danh mục
     public static class PodCategory {
         String subTitle, mainTitle;
         List<String> pods;
@@ -59,7 +55,6 @@ public class PodCourseFragment extends Fragment {
         }
     }
 
-    // Adapter cuộn DỌC (Chứa các danh mục)
     public static class MainCategoryAdapter extends RecyclerView.Adapter<MainCategoryAdapter.CatViewHolder> {
         List<PodCategory> list;
         public MainCategoryAdapter(List<PodCategory> list) { this.list = list; }
@@ -74,7 +69,6 @@ public class PodCourseFragment extends Fragment {
             PodCategory cat = list.get(position);
             holder.tvMain.setText(cat.mainTitle);
 
-            // Nếu không có subTitle thì ẩn đi cho giống UI (như mục Mới Ra Mắt)
             if (cat.subTitle.isEmpty()) {
                 holder.tvSub.setVisibility(View.GONE);
             } else {
@@ -82,7 +76,6 @@ public class PodCourseFragment extends Fragment {
                 holder.tvSub.setText(cat.subTitle);
             }
 
-            // Gắn Adapter cuộn NGANG cho danh sách khoá học
             holder.rv.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext(), LinearLayoutManager.HORIZONTAL, false));
             holder.rv.setAdapter(new PodAdapter(cat.pods));
         }
@@ -102,7 +95,6 @@ public class PodCourseFragment extends Fragment {
         }
     }
 
-    // Adapter cuộn NGANG (Chứa các thẻ PodCourse)
     public static class PodAdapter extends RecyclerView.Adapter<PodAdapter.PodViewHolder> {
         List<String> pods;
         public PodAdapter(List<String> pods) { this.pods = pods; }
