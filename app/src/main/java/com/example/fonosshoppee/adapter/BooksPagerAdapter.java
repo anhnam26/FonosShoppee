@@ -1,8 +1,12 @@
-package com.example.fonosshoppee.book;
+package com.example.fonosshoppee.adapter;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
+
+import com.example.fonosshoppee.fragment.AudiobooksFragment;
+import com.example.fonosshoppee.fragment.EbooksFragment;
+import com.example.fonosshoppee.fragment.SummariesFragment;
 
 public class BooksPagerAdapter extends FragmentStateAdapter {
 
