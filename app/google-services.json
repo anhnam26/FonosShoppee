@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "657545729763",
+    "project_id": "fonos-shoppee1",
+    "storage_bucket": "fonos-shoppee1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:657545729763:android:a656b3c3b6174a683257d6",
+        "android_client_info": {
+          "package_name": "com.example.fonosshoppee"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASmlEaWRsk-toyjSW8e5RRiQK3PrUcWVY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,21 +8,21 @@
     app:cardCornerRadius="12dp"
     app:cardElevation="0dp">
 
-    <RelativeLayout
+    <ImageView
         android:id="@+id/cardBackground"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#4A4A4A"
-        android:padding="16dp">
+        android:scaleType="centerCrop" />
 
-        <TextView
-            android:id="@+id/tvCardTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Tiêu đề"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+    <TextView
+        android:id="@+id/tvCardTitle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:text="Tiêu đề"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
-    </RelativeLayout>
 </androidx.cardview.widget.CardView>

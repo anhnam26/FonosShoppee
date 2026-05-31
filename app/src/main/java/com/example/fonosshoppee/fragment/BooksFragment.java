@@ -1,4 +1,4 @@
-package com.example.fonosshoppee.Main;
+package com.example.fonosshoppee.fragment;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.fonosshoppee.R;
-import com.example.fonosshoppee.book.BooksPagerAdapter;
+import com.example.fonosshoppee.adapter.BooksPagerAdapter;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 

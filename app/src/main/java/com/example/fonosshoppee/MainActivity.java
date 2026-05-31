@@ -1,18 +1,25 @@
 package com.example.fonosshoppee;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
-import com.example.fonosshoppee.Main.ChallengeFragment;
-import com.example.fonosshoppee.Main.DiscoverFragment;
-import com.example.fonosshoppee.Main.LibraryFragment;
-import com.example.fonosshoppee.Main.PodCourseFragment;
-import com.example.fonosshoppee.Main.BooksFragment;
+import com.example.fonosshoppee.fragment.ChallengeFragment;
+import com.example.fonosshoppee.fragment.DiscoverFragment;
+import com.example.fonosshoppee.fragment.LibraryFragment;
+import com.example.fonosshoppee.fragment.PodCourseFragment;
+import com.example.fonosshoppee.fragment.BooksFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+
+// Import thêm cho Firebase và Model Sách
+import com.example.fonosshoppee.model.BookItem;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,18 +30,17 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
-        //Fragment Sách mặc định
+        // Fragment Sách mặc định khi mở app
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new BooksFragment()).commit();
         }
 
-        //click
+        // Lắng nghe sự kiện click trên Bottom Navigation
         bottomNav.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 Fragment selectedFragment = null;
                 int itemId = item.getItemId();
-
 
                 if (itemId == R.id.nav_books) {
                     selectedFragment = new BooksFragment();
@@ -48,12 +54,17 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new LibraryFragment();
                 }
 
-                //chuyển đổi Fragment
+                // Chuyển đổi Fragment tương ứng
                 if (selectedFragment != null) {
                     getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selectedFragment).commit();
                 }
                 return true;
             }
         });
+
+
     }
+
+
+
 }
