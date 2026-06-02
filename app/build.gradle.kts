@@ -49,6 +49,8 @@ dependencies {
     // THÊM VÀO: Thư viện Glide để load ảnh từ mạng
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
+    implementation("androidx.work:work-runtime:2.9.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
