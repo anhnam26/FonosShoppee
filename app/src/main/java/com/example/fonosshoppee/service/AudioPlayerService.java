@@ -21,6 +21,13 @@ public class AudioPlayerService extends Service {
     private final IBinder binder = new LocalBinder();
     private static final String CHANNEL_ID = "AudioPlayerChannel";
 
+    private String currentAudioUrl = ""; // Biến lưu link đang phát
+
+    // Hàm để Activity bên ngoài hỏi xem đang phát bài nào
+    public String getCurrentAudioUrl() {
+        return currentAudioUrl;
+    }
+
     // 1. BOUND SERVICE: Cho phép Activity kết nối vào đây
     public class LocalBinder extends Binder {
         public AudioPlayerService getService() {
@@ -130,6 +137,7 @@ public class AudioPlayerService extends Service {
     // Sửa lại hàm playAudio một chút để nó báo tin qua listener
     public void playAudio(String url) {
         try {
+            currentAudioUrl = url;
             mediaPlayer.reset();
             mediaPlayer.setDataSource(url);
             mediaPlayer.prepareAsync();

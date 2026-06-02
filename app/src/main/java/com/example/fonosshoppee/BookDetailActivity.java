@@ -56,6 +56,28 @@ public class BookDetailActivity extends AppCompatActivity {
             AudioPlayerService.LocalBinder binder = (AudioPlayerService.LocalBinder) service;
             audioService = binder.getService();
             isBound = true;
+
+            // SIÊU NÂNG CẤP: Nếu vào lại đúng cuốn sách đang phát ngầm -> Tự động chạy thanh UI
+            if (audioUrl != null && audioUrl.equals(audioService.getCurrentAudioUrl())) {
+                if (audioService.isPlaying()) {
+                    tvPlayText.setText("Tạm dừng");
+                    ivPlayIcon.setImageResource(android.R.drawable.ic_media_pause);
+                } else {
+                    tvPlayText.setText("Tiếp tục nghe");
+                    ivPlayIcon.setImageResource(android.R.drawable.ic_media_play);
+                }
+
+                // Kích hoạt lại thanh tiến trình
+                int duration = audioService.getDuration();
+                if (duration > 0) {
+                    seekBarAudio.setMax(duration);
+                    tvTotalTime.setText(formatTime(duration));
+                    handler.post(updateSeekBarRunnable);
+                }
+
+                // Gắn lại sự kiện lắng nghe khi hết bài
+                setupPlayerListener();
+            }
         }
 
         @Override
@@ -63,6 +85,29 @@ public class BookDetailActivity extends AppCompatActivity {
             isBound = false;
         }
     };
+
+    // Hàm tạo Listener tách rời cho gọn code
+    private void setupPlayerListener() {
+        if (audioService != null) {
+            audioService.setListener(new AudioPlayerService.OnPlayerListener() {
+                @Override
+                public void onPrepared(int duration) {
+                    seekBarAudio.setMax(duration);
+                    tvTotalTime.setText(formatTime(duration));
+                    handler.post(updateSeekBarRunnable);
+                }
+
+                @Override
+                public void onCompletion() {
+                    handler.removeCallbacks(updateSeekBarRunnable);
+                    tvPlayText.setText("Nghe chương đầu miễn phí");
+                    ivPlayIcon.setImageResource(android.R.drawable.ic_media_play);
+                    seekBarAudio.setProgress(0);
+                    tvCurrentTime.setText("00:00");
+                }
+            });
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,52 +171,45 @@ public class BookDetailActivity extends AppCompatActivity {
         });
 
         // --- PHÁT NHẠC TỪ API THẬT ---
+        // --- PHÁT NHẠC THÔNG MINH (PHÂN BIỆT BÀI MỚI/CŨ) ---
         btnPlayAudio.setOnClickListener(v -> {
             if (isBound && audioService != null) {
-                if (audioService.isPlaying()) {
-                    // ĐANG PHÁT -> TẠM DỪNG
-                    audioService.pauseAudio();
-                    tvPlayText.setText("Tiếp tục nghe");
-                    ivPlayIcon.setImageResource(android.R.drawable.ic_media_play);
-                } else {
-                    if (tvPlayText.getText().toString().equals("Tiếp tục nghe")) {
-                        // NẾU ĐÃ TẠM DỪNG -> PHÁT TIẾP TỪ CHỖ CŨ (Resume)
+
+                // So sánh xem đang bấm vào sách cũ hay sách mới
+                String playingUrl = audioService.getCurrentAudioUrl();
+                boolean isSameBook = audioUrl != null && audioUrl.equals(playingUrl);
+
+                if (isSameBook) {
+                    // TRƯỜNG HỢP 1: ĐANG Ở ĐÚNG CUỐN SÁCH ĐÓ -> BẬT/TẮT NHƯ BÌNH THƯỜNG
+                    if (audioService.isPlaying()) {
+                        audioService.pauseAudio();
+                        tvPlayText.setText("Tiếp tục nghe");
+                        ivPlayIcon.setImageResource(android.R.drawable.ic_media_play);
+                    } else {
                         audioService.resumeAudio();
                         tvPlayText.setText("Tạm dừng");
                         ivPlayIcon.setImageResource(android.R.drawable.ic_media_pause);
-                    } else {
-                        // CHƯA PHÁT BAO GIỜ -> TẢI MỚI TỪ ĐẦU
-                        if (audioUrl == null || audioUrl.isEmpty()) {
-                            Toast.makeText(this, "Sách này chưa có bản Audio!", Toast.LENGTH_SHORT).show();
-                            return; // Dừng lại, không phát nhạc
-                        }
-
-                        Toast.makeText(this, "Đang tải nhạc, đợi một lát nhé...", Toast.LENGTH_SHORT).show();
-                        audioService.playAudio(audioUrl); // Truyền link thật vào Service
-
-                        tvPlayText.setText("Tạm dừng");
-                        ivPlayIcon.setImageResource(android.R.drawable.ic_media_pause);
-
-                        // Bắt sự kiện khi nhạc tải xong để lấy thời gian
-                        audioService.setListener(new AudioPlayerService.OnPlayerListener() {
-                            @Override
-                            public void onPrepared(int duration) {
-                                seekBarAudio.setMax(duration);
-                                tvTotalTime.setText(formatTime(duration));
-                                handler.post(updateSeekBarRunnable); // Bắt đầu thanh chạy tiến trình
-                            }
-
-                            @Override
-                            public void onCompletion() {
-                                // Khi nghe hết sách
-                                handler.removeCallbacks(updateSeekBarRunnable);
-                                tvPlayText.setText("Nghe chương đầu miễn phí");
-                                ivPlayIcon.setImageResource(android.R.drawable.ic_media_play);
-                                seekBarAudio.setProgress(0);
-                                tvCurrentTime.setText("00:00");
-                            }
-                        });
                     }
+                } else {
+                    // TRƯỜNG HỢP 2: BẤM SANG CUỐN SÁCH MỚI HOÀN TOÀN -> ÉP CHẠY LẠI TỪ ĐẦU
+                    if (audioUrl == null || audioUrl.isEmpty()) {
+                        Toast.makeText(this, "Sách này chưa có bản Audio!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Toast.makeText(this, "Đang chuyển sách, đợi một lát nhé...", Toast.LENGTH_SHORT).show();
+
+                    // Gửi link mới sang Service (Service sẽ tự động ngắt bài cũ và load bài mới)
+                    audioService.playAudio(audioUrl);
+
+                    tvPlayText.setText("Tạm dừng");
+                    ivPlayIcon.setImageResource(android.R.drawable.ic_media_pause);
+
+                    // Xóa thời gian bài cũ trên màn hình, đợi bài mới load xong
+                    seekBarAudio.setProgress(0);
+                    tvCurrentTime.setText("00:00");
+
+                    setupPlayerListener();
                 }
             }
         });
