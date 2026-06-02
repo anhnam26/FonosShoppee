@@ -17,7 +17,6 @@ import java.util.List;
 
 public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder> {
 
-    // 1. Đổi kiểu dữ liệu từ List<String> thành List<BookItem>
     private List<BookItem> bookList;
 
     public BookAdapter(List<BookItem> bookList) {
@@ -35,22 +34,35 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
     public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
         BookItem item = bookList.get(position);
 
-        // 2. Gắn dữ liệu Tiêu đề và Tác giả
+        // Gắn dữ liệu Tiêu đề và Tác giả
         holder.tvTitle.setText(item.getTitle());
 
         if (holder.tvAuthor != null && item.getAuthor() != null) {
             holder.tvAuthor.setText(item.getAuthor());
         }
 
-        // 3. Dùng Glide để load ảnh bìa sách
+        // Dùng Glide để load ảnh bìa sách
         if (holder.ivCover != null && item.getCoverUrl() != null && !item.getCoverUrl().isEmpty()) {
             Glide.with(holder.itemView.getContext())
                     .load(item.getCoverUrl())
                     .into(holder.ivCover);
         } else if (holder.ivCover != null) {
-            // Nếu không có link ảnh, set một màu nền mặc định
             holder.ivCover.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"));
         }
+
+        // --- CODE MỚI THÊM: XỬ LÝ SỰ KIỆN CLICK ĐỂ CHUYỂN TRANG ---
+        // --- CODE XỬ LÝ SỰ KIỆN CLICK ĐỂ CHUYỂN TRANG ---
+        holder.itemView.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(holder.itemView.getContext(), com.example.fonosshoppee.BookDetailActivity.class);
+
+            intent.putExtra("BOOK_TITLE", item.getTitle());
+            intent.putExtra("BOOK_AUTHOR", item.getAuthor());
+            intent.putExtra("BOOK_COVER", item.getCoverUrl());
+            // THÊM DÒNG NÀY: Truyền link audio thực tế của cuốn sách đi
+            intent.putExtra("AUDIO_URL", item.getAudioUrl());
+
+            holder.itemView.getContext().startActivity(intent);
+        });
     }
 
     @Override
@@ -65,7 +77,6 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Bạn nhớ kiểm tra xem file item_book.xml của bạn đã có đủ 3 ID này chưa nhé!
             tvTitle = itemView.findViewById(R.id.tvBookTitle);
             tvAuthor = itemView.findViewById(R.id.tvBookAuthor);
             ivCover = itemView.findViewById(R.id.ivBookCover);
