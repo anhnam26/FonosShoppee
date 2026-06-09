@@ -18,15 +18,11 @@ import java.util.List;
 public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder> {
 
     private List<BookItem> bookList;
-
-    // --- BỔ SUNG CÔNG TẮC CHẾ ĐỘ NỀN TỐI ---
     private boolean isDarkMode = false;
 
     public void setDarkMode(boolean isDark) {
         this.isDarkMode = isDark;
     }
-    // ----------------------------------------
-
     public BookAdapter(List<BookItem> bookList) {
         this.bookList = bookList;
     }
