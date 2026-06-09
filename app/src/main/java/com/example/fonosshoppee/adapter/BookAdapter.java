@@ -19,6 +19,14 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
 
     private List<BookItem> bookList;
 
+    // --- BỔ SUNG CÔNG TẮC CHẾ ĐỘ NỀN TỐI ---
+    private boolean isDarkMode = false;
+
+    public void setDarkMode(boolean isDark) {
+        this.isDarkMode = isDark;
+    }
+    // ----------------------------------------
+
     public BookAdapter(List<BookItem> bookList) {
         this.bookList = bookList;
     }
@@ -50,15 +58,28 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
             holder.ivCover.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"));
         }
 
-        // --- CODE MỚI THÊM: XỬ LÝ SỰ KIỆN CLICK ĐỂ CHUYỂN TRANG ---
-        // --- CODE XỬ LÝ SỰ KIỆN CLICK ĐỂ CHUYỂN TRANG ---
+        // --- ĐỔI MÀU CHỮ DỰA TRÊN CÔNG TẮC DARK MODE ---
+        if (isDarkMode) {
+            // Nền tối -> Chữ Trắng, Tác giả Xám sáng
+            holder.tvTitle.setTextColor(android.graphics.Color.WHITE);
+            if (holder.tvAuthor != null) {
+                holder.tvAuthor.setTextColor(android.graphics.Color.parseColor("#B0BEC5"));
+            }
+        } else {
+            // Nền sáng -> Chữ Xanh đen, Tác giả Xám
+            holder.tvTitle.setTextColor(android.graphics.Color.parseColor("#1B263B"));
+            if (holder.tvAuthor != null) {
+                holder.tvAuthor.setTextColor(android.graphics.Color.parseColor("#6D7885"));
+            }
+        }
+        // -------------------------------------------------
+
         holder.itemView.setOnClickListener(v -> {
             android.content.Intent intent = new android.content.Intent(holder.itemView.getContext(), com.example.fonosshoppee.BookDetailActivity.class);
 
             intent.putExtra("BOOK_TITLE", item.getTitle());
             intent.putExtra("BOOK_AUTHOR", item.getAuthor());
             intent.putExtra("BOOK_COVER", item.getCoverUrl());
-            // THÊM DÒNG NÀY: Truyền link audio thực tế của cuốn sách đi
             intent.putExtra("AUDIO_URL", item.getAudioUrl());
 
             holder.itemView.getContext().startActivity(intent);

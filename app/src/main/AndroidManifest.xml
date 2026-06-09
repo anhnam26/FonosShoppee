@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:allowBackup="true"
@@ -18,7 +19,7 @@
         android:theme="@style/Theme.FonosShoppee">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,13 +27,31 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".RegisterActivity" />
+
+        <activity android:name=".MainActivity" android:exported="true" />
+        <activity android:name=".UserProfileActivity" />
         <activity android:name=".BookDetailActivity" />
+        <activity android:name=".LeaderboardActivity" />
+        <activity android:name=".ContentListActivity" />
+        <activity android:name=".InviteFriendsActivity" />
 
         <service
             android:name=".service.AudioPlayerService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
+        <receiver android:name=".receiver.SleepTimerReceiver" android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

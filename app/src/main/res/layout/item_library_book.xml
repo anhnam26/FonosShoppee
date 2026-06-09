@@ -16,17 +16,51 @@
             android:id="@+id/ivBookCover"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:background="#E0E0E0" />
-
+            android:background="#E0E0E0"
+            android:scaleType="centerCrop" />
     </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/layoutBookActions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <RelativeLayout
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_circle_progress">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="▶"
+                android:textColor="#F25B3E"
+                android:textSize="14sp" />
+        </RelativeLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="⋯"
+            android:textColor="#8A93A2"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
         android:layout_toEndOf="@id/cvBookCover"
+        android:layout_toStartOf="@id/layoutBookActions"
         android:orientation="vertical">
 
         <TextView
@@ -42,9 +76,11 @@
 
         <TextView
             android:id="@+id/tvBookTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
             android:text="Một Đời Quản Trị"
             android:textColor="#1B263B"
             android:textSize="16sp"
@@ -52,51 +88,33 @@
 
         <TextView
             android:id="@+id/tvBookAuthor"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:text="Phan Văn Trường"
             android:textColor="#8A93A2"
             android:textSize="14sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <RelativeLayout
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_circle_progress">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:text="▶"
-                android:textColor="#F25B3E"
-                android:textSize="14sp" />
-        </RelativeLayout>
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/tvBookProgress"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="•••"
-            android:textColor="#8A93A2"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Đã nghe 12:30 / 01:20:00"
+            android:textColor="#F25B3E"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_below="@id/cvBookCover"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
         android:layout_toEndOf="@id/cvBookCover"
-        android:layout_marginStart="16dp"
         android:background="#F3F4F6" />
 </RelativeLayout>

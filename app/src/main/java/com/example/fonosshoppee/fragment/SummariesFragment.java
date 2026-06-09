@@ -45,8 +45,8 @@ public class SummariesFragment extends Fragment {
     }
 
     private void loadSummariesFromFirebase() {
-        // Tạm thời lấy chung dữ liệu collection "audiobooks" cho nhanh.
-        // Sau này bạn có thể tạo collection "summaries" riêng.
+        // lấy chung dữ liệu collection "audiobooks".
+
         db.collection("audiobooks")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {

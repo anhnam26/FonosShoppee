@@ -41,11 +41,12 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
     implementation(libs.material)
-
+    implementation("com.google.firebase:firebase-auth:23.0.0")
     // Thư viện Firebase (Assistant đã tự thêm)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
-
+    implementation("com.google.firebase:firebase-storage:20.3.0")
+    implementation("de.hdodenhof:circleimageview:3.1.0")
     // THÊM VÀO: Thư viện Glide để load ảnh từ mạng
     implementation("com.github.bumptech.glide:glide:4.16.0")
 

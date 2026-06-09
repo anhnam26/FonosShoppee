@@ -22,9 +22,11 @@
                 android:id="@+id/tvSubTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tiêu đề phụ"
-                android:textColor="#6B7280"
-                android:textSize="14sp" />
+                android:text="Subtitle"
+                android:textColor="#F25B3E"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <TextView
                 android:id="@+id/tvMainTitle"

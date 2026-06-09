@@ -129,7 +129,7 @@ public class PodCourseFragment extends Fragment {
         }
     }
 
-    // ================= ADAPTER CUỘN NGANG (THẺ PODCOURSE) =================
+    //ADAPTER CUỘN NGANG (THẺ PODCOURSE)
     public static class PodAdapter extends RecyclerView.Adapter<PodAdapter.PodViewHolder> {
         List<PodCourseItem> pods;
         public PodAdapter(List<PodCourseItem> pods) { this.pods = pods; }
