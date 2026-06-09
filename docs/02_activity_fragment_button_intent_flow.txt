@@ -1,0 +1,562 @@
+LUONG ACTIVITY / FRAGMENT / BUTTON / INTENT
+===========================================
+
+File nay liet ke cac su kien chinh khi nguoi dung bam nut, doi tab, chuyen trang.
+
+
+1. LoginActivity
+----------------
+Layout: activity_login.xml
+Class: LoginActivity.java
+
+Lifecycle:
+- onStart():
+  + mAuth = FirebaseAuth.getInstance()
+  + currentUser = mAuth.getCurrentUser()
+  + Neu currentUser != null:
+    -> startActivity(MainActivity)
+    -> finish()
+
+Button / Event:
+- tvGoToRegister:
+  -> startActivity(RegisterActivity)
+
+- btnLogin:
+  -> doc etLoginEmail, etLoginPassword
+  -> neu thieu thong tin: Toast
+  -> mAuth.signInWithEmailAndPassword(email, password)
+     + success: startActivity(MainActivity), finish()
+     + fail: Toast "Sai email/mat khau/khong co mang"
+
+Intent:
+- Explicit Intent: LoginActivity -> RegisterActivity
+- Explicit Intent: LoginActivity -> MainActivity
+
+
+2. RegisterActivity
+-------------------
+Layout: activity_register.xml
+Class: RegisterActivity.java
+
+Button / Event:
+- tvGoToLogin:
+  -> finish()
+  -> quay lai LoginActivity
+
+- btnRegister:
+  -> doc email, pass, confirmPass
+  -> validate rong, mat khau khop, do dai >= 6
+  -> mAuth.createUserWithEmailAndPassword(email, pass)
+     + success: Toast, startActivity(MainActivity), finish()
+     + fail: Toast loi
+
+Intent:
+- Explicit Intent: RegisterActivity -> MainActivity
+
+
+3. MainActivity
+---------------
+Layout: activity_main.xml
+Class: MainActivity.java
+
+Thanh phan:
+- fragment_container
+- bottom_navigation
+- miniPlayerLayout
+- miniPlayerBtnPlay
+- ivGlobalAvatar
+
+Lifecycle:
+- onCreate():
+  + setContentView(activity_main)
+  + UserDataStore.recordAppOpened()
+  + neu lan dau: hien BooksFragment
+  + setOnItemSelectedListener cho bottom nav
+  + setOnClick mini player va avatar
+
+- onStart():
+  + bindService(AudioPlayerService)
+
+- onResume():
+  + UserDataStore.recordAppOpened()
+  + updateMiniPlayerUI()
+  + updateGlobalAvatar()
+
+- onStop():
+  + unbindService(AudioPlayerService)
+
+Bottom nav:
+- nav_books:
+  -> replace fragment_container = BooksFragment
+
+- nav_podcourse:
+  -> replace fragment_container = PodCourseFragment
+
+- nav_discover:
+  -> replace fragment_container = DiscoverFragment
+
+- nav_challenge:
+  -> replace fragment_container = ChallengeFragment
+
+- nav_library:
+  -> replace fragment_container = LibraryFragment
+
+Mini player:
+- miniPlayerBtnPlay:
+  -> neu audioService.isPlaying(): pauseAudio()
+  -> nguoc lai: resumeAudio()
+  -> updateMiniPlayerUI()
+
+- miniPlayerLayout:
+  -> mo BookDetailActivity voi extras:
+     + BOOK_TITLE = audioService.getCurrentBookTitle()
+     + BOOK_AUTHOR = audioService.getCurrentBookAuthor()
+     + BOOK_COVER = audioService.getCurrentBookCover()
+     + AUDIO_URL = audioService.getCurrentAudioUrl()
+
+Avatar:
+- ivGlobalAvatar:
+  -> startActivity(UserProfileActivity)
+
+Ham dac biet:
+- switchToBooksSubTab(int subTabPosition):
+  + Tao BooksFragment moi
+  + Bundle SUB_TAB_POSITION
+  + replace fragment_container
+  + set bottom nav ve nav_books
+  + BooksFragment doc SUB_TAB_POSITION de mo tab con tuong ung
+
+
+4. BooksFragment
+----------------
+Layout: fragment_books.xml
+Class: BooksFragment.java
+
+Thanh phan:
+- TabLayout
+- ViewPager2
+
+Flow:
+BooksFragment.onCreateView()
+-> Tao BooksPagerAdapter
+-> Gan adapter vao ViewPager2
+-> TabLayoutMediator noi TabLayout voi ViewPager2
+-> 3 tab:
+   + position 0: Sach noi -> AudiobooksFragment
+   + position 1: Ebook -> EbooksFragment
+   + position 2: Tom tat sach -> SummariesFragment
+-> Neu arguments co SUB_TAB_POSITION:
+   + viewPager.setCurrentItem(targetTab, false)
+
+
+5. AudiobooksFragment / EbooksFragment / SummariesFragment
+----------------------------------------------------------
+Layout:
+- fragment_audiobooks.xml
+- fragment_ebook.xml
+- fragment_booksummary.xml
+
+Class:
+- AudiobooksFragment.java
+- EbooksFragment.java
+- SummariesFragment.java
+
+Flow chung:
+onCreateView()
+-> db = FirebaseFirestore.getInstance()
+-> load...FromFirebase()
+-> db.collection("audiobooks").get()
+-> onSuccess:
+   + document.toObject(BookItem.class)
+   + add vao bookList
+   + setup RecyclerView bang BookAdapter
+
+Event:
+- Click vao mot sach:
+  -> BookAdapter tao Intent mo BookDetailActivity
+  -> truyen BOOK_TITLE, BOOK_AUTHOR, BOOK_COVER, AUDIO_URL
+
+
+6. BookAdapter
+--------------
+Layout item: item_book.xml
+Class: BookAdapter.java
+
+onBindViewHolder:
+- Lay BookItem tai position.
+- Set title, author.
+- Load coverUrl bang Glide.
+- Doi mau chu theo isDarkMode.
+- itemView.setOnClickListener:
+  -> Intent den BookDetailActivity
+  -> putExtra:
+     + BOOK_TITLE
+     + BOOK_AUTHOR
+     + BOOK_COVER
+     + AUDIO_URL
+  -> startActivity(intent)
+
+
+7. BookDetailActivity
+---------------------
+Layout: activity_book_detail.xml
+Class: BookDetailActivity.java
+
+Intent input:
+- BOOK_TITLE
+- BOOK_AUTHOR
+- BOOK_COVER
+- AUDIO_URL
+- START_POSITION, dung khi mo tu Thu vien Gan day/Da tai
+- AUTO_PLAY, dung khi muon tu phat tiep
+
+Lifecycle:
+- onCreate():
+  + bindViews()
+  + readIntentData()
+  + renderBookInfo()
+  + startAndBindAudioService()
+  + setupActions()
+
+- onPause():
+  + saveCurrentProgress()
+
+- onDestroy():
+  + saveCurrentProgress()
+  + remove callback updateSeekBarRunnable
+  + unbindService neu dang bind
+
+Button / Event:
+- btnBack:
+  -> finish()
+
+- btnShare:
+  -> ACTION_SEND text chia se sach
+
+- seekBarAudio keo bang tay:
+  -> audioService.seekTo(progress)
+  -> update tvCurrentTime
+  -> saveCurrentProgress()
+
+- btnRewind15:
+  -> audioService.rewind(15000)
+  -> saveCurrentProgress()
+
+- btnForward30:
+  -> audioService.fastForward(30000)
+  -> saveCurrentProgress()
+
+- btnPrevBook / btnNextBook:
+  -> hien Toast "Tinh nang can danh sach sach"
+
+- btnSpeed:
+  -> an/hien layoutSpeedVertical
+
+- seekBarSpeedVertical:
+  -> tinh speed = 0.5f + progress / 10.0f
+  -> audioService.setPlaybackSpeed(speed)
+
+- btnSleepTimer:
+  -> showSleepTimerMenu()
+  -> nguoi dung chon:
+     + Khong hen gio: cancelSleepTimer()
+     + 15/30/45 phut, 1/2/3/5 gio: startSleepTimer(minutes)
+
+- btnPlayAudio:
+  -> togglePlayback()
+  -> Neu dang la sach hien tai:
+     + neu dang phat: pauseAudio()
+     + neu dang pause: resumeAudio()
+  -> Neu la sach moi:
+     + startSelectedAudio(startPositionMs)
+     + audioService.playAudio(audioUrl)
+
+- btnDownload:
+  -> enqueueDownload()
+  -> tao OneTimeWorkRequest DownloadWorker
+  -> putData: AUDIO_URL, BOOK_TITLE, BOOK_AUTHOR, BOOK_COVER
+  -> WorkManager.enqueue()
+
+Intent/Service:
+- startForegroundService(AudioPlayerService) de service co notification.
+- bindService(AudioPlayerService) de Activity goi ham play/pause/seek.
+- AlarmManager tao PendingIntent broadcast den SleepTimerReceiver.
+
+
+8. DiscoverFragment
+-------------------
+Layout: fragment_discover.xml
+Class: DiscoverFragment.java
+
+Flow:
+onCreateView()
+-> db.collection("discover").get()
+-> document.toObject(DiscoverItem.class)
+-> DiscoverAdapter hien card dang GridLayoutManager 2 cot
+-> fullWidth card chiem 2 cot
+
+Click card trong DiscoverAdapter:
+
+- Neu title chua "Truyen Ngu" hoac "Truyen ngu & Nhac":
+  -> mo BottomSheetDialog dialog_choose_content.xml
+  -> btnChooseSleepStory:
+     + ContentListActivity, extra CONTENT_TYPE = SLEEP_STORY
+  -> btnChooseRelaxMusic:
+     + ContentListActivity, extra CONTENT_TYPE = RELAX_MUSIC
+
+- Neu title chua "Bang Xep Hang":
+  -> startActivity(LeaderboardActivity)
+
+- Neu title chua "Sach Noi":
+  -> MainActivity.switchToBooksSubTab(0)
+
+- Neu title chua "Ebook":
+  -> MainActivity.switchToBooksSubTab(1)
+
+- Neu title chua "Tom Tat Sach":
+  -> MainActivity.switchToBooksSubTab(2)
+
+- Neu title chua "Ru Ban" / "Nhap Hoi" / "Tang Qua":
+  -> startActivity(InviteFriendsActivity)
+
+- Neu title co "podcourse":
+  -> bottomNav.setSelectedItemId(nav_podcourse)
+
+- Cac title khac:
+  -> ContentListActivity voi CONTENT_TYPE:
+     + NEW_RELEASES
+     + PODCAST
+     + MEDITATION
+     + ENGLISH_BOOKS
+     + FREE_BOOKS
+     + KIDS
+  -> Neu chua map: Toast dang cap nhat chuyen muc.
+
+
+9. ContentListActivity
+----------------------
+Layout: activity_content_list.xml
+Class: ContentListActivity.java
+
+Intent input:
+- CONTENT_TYPE
+
+Flow:
+onCreate()
+-> set title/subtitle/background theo CONTENT_TYPE
+-> map CONTENT_TYPE sang Firestore collection:
+   + SLEEP_STORY   -> sleep_stories
+   + RELAX_MUSIC   -> relax_music
+   + PODCAST       -> podcasts
+   + MEDITATION    -> meditations
+   + ENGLISH_BOOKS -> english_books
+   + FREE_BOOKS    -> free_books
+   + KIDS          -> kids_books
+   + NEW_RELEASES  -> ALL_COLLECTIONS
+-> loadDataFromFirebase(collectionName)
+-> hien listFeatured ngang va listAll grid
+
+Button / Event:
+- btnBack:
+  -> finish()
+
+- click sach:
+  -> BookAdapter mo BookDetailActivity
+
+
+10. LeaderboardActivity
+-----------------------
+Layout: activity_leaderboard.xml
+Class: LeaderboardActivity.java
+
+Flow:
+onCreate()
+-> setup Spinner categoryNames
+-> setup RecyclerView
+-> spinnerCategory.setOnItemSelectedListener()
+
+Event:
+- btnBack:
+  -> finish()
+
+- Spinner chon vi tri 0:
+  -> loadAllCategoriesData()
+  -> lay du lieu tu nhieu collection
+  -> loc trung title
+  -> shuffle
+  -> hien ranking
+
+- Spinner chon vi tri > 0:
+  -> loadRankingData(collectionNames[position])
+
+- Click item ranking:
+  -> Intent BookDetailActivity
+  -> putExtra BOOK_TITLE, BOOK_AUTHOR, BOOK_COVER, AUDIO_URL
+
+
+11. InviteFriendsActivity
+-------------------------
+Layout: activity_invite_friends.xml
+Class: InviteFriendsActivity.java
+
+Flow:
+onCreate()
+-> setup RecyclerView
+-> loadAllBooks()
+-> lay sach tu nhieu collection Firebase
+-> loc trung title
+-> shuffle
+-> hien checkbox list
+
+Button / Event:
+- btnBack:
+  -> finish()
+
+- Click item hoac checkbox:
+  -> check/uncheck sach
+  -> selectedBooks add/remove title
+  -> cap nhat btnShare text va enabled
+
+- btnShare:
+  -> neu selectedBooks rong: return
+  -> tao text moi ban + danh sach sach
+  -> ACTION_SEND text/plain
+  -> startActivity(Intent.createChooser(...))
+
+
+12. UserProfileActivity
+-----------------------
+Layout: activity_user_profile.xml
+Class: UserProfileActivity.java
+
+Flow:
+onCreate()
+-> FirebaseAuth.getCurrentUser()
+-> hien email, displayName, photoUrl
+
+Button / Event:
+- btnProfileBack:
+  -> finish()
+
+- ivProfileAvatar:
+  -> ACTION_PICK image/*
+  -> ActivityResultLauncher nhan Uri
+  -> set anh tam len ImageView
+
+- btnSaveProfile:
+  -> saveUserProfile()
+  -> update displayName
+  -> neu email thay doi: updateEmail()
+  -> neu co password moi: updatePassword()
+  -> Toast, finish()
+
+- btnLogout:
+  -> mAuth.signOut()
+  -> Intent LoginActivity
+  -> flags NEW_TASK | CLEAR_TASK
+  -> startActivity
+  -> finish()
+
+
+13. ChallengeFragment
+---------------------
+Layout: fragment_challenge.xml
+Class: ChallengeFragment.java
+
+Flow:
+onCreateView()
+-> setup RecyclerView theo ngay va theo thang
+-> loadChallengeData()
+
+onResume()
+-> loadChallengeData()
+
+loadChallengeData()
+-> UserDataStore.getChallengeStats()
+-> tao ChallengeItem:
+   Theo ngay:
+   + Dang nhap vao Fonos hom nay
+   + Nghe Fonos trong 15 phut
+   Theo thang:
+   + Nghe Fonos trong 300 phut
+   + Dang nhap Fonos 15 ngay trong thang
+   + Dang nhap Fonos 3 ngay lien tiep
+
+Button / Event:
+- tvActionButton cua thu thach nghe:
+  -> openAudiobooks()
+  -> MainActivity.switchToBooksSubTab(0)
+
+
+14. LibraryFragment
+-------------------
+Layout: fragment_library.xml
+Class: LibraryFragment.java
+
+Flow:
+onCreateView()
+-> setup menu ngang:
+   + Gan day
+   + Da tai
+-> setup RecyclerView sach
+-> updateContentArea("Gan day")
+
+onResume()
+-> loadBooks()
+
+Event:
+- Bam menu "Gan day":
+  -> showingDownloaded = false
+  -> UserDataStore.getRecentBooks(current user)
+  -> hien cac sach da nghe va tien trinh
+
+- Bam menu "Da tai":
+  -> showingDownloaded = true
+  -> UserDataStore.getDownloadedBooks(device)
+  -> hien sach da co file local tren may
+
+- Bam sach:
+  -> openBook(item)
+  -> Neu dang o "Da tai": AUDIO_URL = localAudioPath
+  -> Neu dang o "Gan day": AUDIO_URL = audioUrl
+  -> truyen START_POSITION = item.positionMs
+  -> truyen AUTO_PLAY = true
+  -> startActivity(BookDetailActivity)
+
+- Nhan giu sach trong "Da tai":
+  -> PopupMenu:
+     + Xoa khoi may
+     + Chia se
+
+- Xoa khoi may:
+  -> UserDataStore.removeDownloadedBook(item, deleteFile = true)
+  -> xoa file local
+  -> loadBooks()
+
+- Chia se:
+  -> FileProvider tao Uri cho file .mp3
+  -> ACTION_SEND audio/mpeg
+  -> EXTRA_STREAM = Uri
+  -> GRANT_READ_URI_PERMISSION
+
+
+15. PodCourseFragment
+---------------------
+Layout: fragment_podcourse.xml
+Class: PodCourseFragment.java
+
+Flow:
+onCreateView()
+-> db.collection("podcourses").get()
+-> map PodCourseItem
+-> tao cac PodCategory:
+   + PodCourse mien phi
+   + PodCourse Moi Ra Mat
+   + Top Thinh Hanh Hom Nay
+   + Kinh Doanh & Khoi Nghiep
+   + Phat Trien Ca Nhan
+   + Suc Khoe
+-> MainCategoryAdapter hien list doc
+-> moi category co RecyclerView ngang bang PodAdapter
+
+Hien tai PodCourse item chi hien thi, chua co click mo detail rieng.

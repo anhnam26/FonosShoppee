@@ -1,0 +1,244 @@
+MO HINH MVC / MOPR TRONG PROJECT
+================================
+
+Theo yeu cau trong anh:
+
+[MOPR]
+Mo hinh code MVC:
+- M: Model      -> Cac class minh da khai bao
+- V: View       -> Layout XML
+- C: Controller -> Ket noi View voi Model
+
+
+1. Model (M)
+------------
+Model la cac class chua du lieu, getter/setter, constructor rong de Firebase co the map document thanh object Java.
+
+Danh sach Model:
+
+1. BookItem
+   File: app/src/main/java/com/example/fonosshoppee/model/BookItem.java
+   Vai tro:
+   - Dai dien mot sach noi/sach trong danh sach online.
+   - Field:
+     + title
+     + author
+     + coverUrl
+     + audioUrl
+   - Duoc Firebase Firestore map tu document.
+   - Duoc BookAdapter hien thi len item_book.xml.
+
+2. LibBookItem
+   File: app/src/main/java/com/example/fonosshoppee/model/LibBookItem.java
+   Vai tro:
+   - Dai dien sach trong Thu vien.
+   - Co them du lieu local:
+     + localAudioPath
+     + progressText
+     + positionMs
+     + durationMs
+     + updatedAt
+   - Dung cho "Gan day" va "Da tai".
+
+3. ChallengeItem
+   File: app/src/main/java/com/example/fonosshoppee/model/ChallengeItem.java
+   Vai tro:
+   - Dai dien mot thu thach tren UI.
+   - Field:
+     + emoji
+     + title
+     + progressText
+     + actionButtonText
+     + completed
+
+4. DiscoverItem
+   File: app/src/main/java/com/example/fonosshoppee/model/DiscoverItem.java
+   Vai tro:
+   - Dai dien mot card trong man Kham pha.
+   - Co title, image/color, fullWidth, height.
+
+5. PodCourseItem
+   File: app/src/main/java/com/example/fonosshoppee/model/PodCourseItem.java
+   Vai tro:
+   - Dai dien mot podcourse.
+   - Duoc PodCourseFragment doc tu Firestore va hien trong list ngang.
+
+
+2. View (V)
+-----------
+View la cac file XML trong app/src/main/res/layout.
+
+Activity layout:
+- activity_login.xml              -> giao dien LoginActivity
+- activity_register.xml           -> giao dien RegisterActivity
+- activity_main.xml               -> giao dien MainActivity
+- activity_book_detail.xml        -> giao dien BookDetailActivity
+- activity_content_list.xml       -> giao dien ContentListActivity
+- activity_leaderboard.xml        -> giao dien LeaderboardActivity
+- activity_invite_friends.xml     -> giao dien InviteFriendsActivity
+- activity_user_profile.xml       -> giao dien UserProfileActivity
+
+Fragment layout:
+- fragment_books.xml              -> giao dien BooksFragment, co TabLayout + ViewPager2
+- fragment_audiobooks.xml         -> giao dien AudiobooksFragment
+- fragment_ebook.xml              -> giao dien EbooksFragment
+- fragment_booksummary.xml        -> giao dien SummariesFragment
+- fragment_podcourse.xml          -> giao dien PodCourseFragment
+- fragment_discover.xml           -> giao dien DiscoverFragment
+- fragment_challenge.xml          -> giao dien ChallengeFragment
+- fragment_library.xml            -> giao dien LibraryFragment
+
+Item/dialog layout:
+- item_book.xml                   -> item sach online dung trong BookAdapter
+- item_library_book.xml           -> item sach trong Thu vien
+- item_library_menu.xml           -> nut menu Gan day / Da tai
+- item_challenge.xml              -> item thu thach
+- item_discover_card.xml          -> card Kham pha
+- item_podcourse.xml              -> item podcourse
+- item_category_podcourse.xml     -> mot nhom podcourse gom title + RecyclerView ngang
+- item_leaderboard.xml            -> item bang xep hang
+- item_invite_book.xml            -> item sach de moi ban
+- dialog_choose_content.xml       -> bottom sheet chon Truyen ngu / Nhac chu de
+
+
+3. Controller (C)
+-----------------
+Controller la cac class bat su kien UI, lay Model, day du lieu vao View, chuyen man hinh, goi Service/Worker.
+
+Controller chinh:
+
+1. LoginActivity
+   - Ket noi activity_login.xml voi FirebaseAuth.
+   - Dang nhap user.
+   - Neu da dang nhap thi chuyen MainActivity.
+
+2. RegisterActivity
+   - Ket noi activity_register.xml voi FirebaseAuth.
+   - Tao tai khoan moi.
+   - Dang ky thanh cong thi mo MainActivity.
+
+3. MainActivity
+   - Ket noi activity_main.xml voi 5 Fragment.
+   - Dieu khien BottomNavigationView.
+   - Dieu khien mini player.
+   - Bind AudioPlayerService de biet audio dang phat.
+   - Mo UserProfileActivity khi bam avatar.
+
+4. BooksFragment + BooksPagerAdapter
+   - Dieu khien TabLayout + ViewPager2.
+   - Chon tab con:
+     + AudiobooksFragment
+     + EbooksFragment
+     + SummariesFragment
+
+5. AudiobooksFragment / EbooksFragment / SummariesFragment
+   - Doc Firestore collection "audiobooks".
+   - Gan data vao RecyclerView qua BookAdapter.
+
+6. BookAdapter
+   - Controller nho cua RecyclerView item.
+   - Nhan List<BookItem>.
+   - Bind title/author/cover vao item_book.xml.
+   - Bat click item -> tao Intent mo BookDetailActivity.
+
+7. BookDetailActivity
+   - Dieu khien man chi tiet sach.
+   - Bind AudioPlayerService.
+   - Xu ly play/pause, seekbar, tua, toc do, hen gio, share, download.
+
+8. AudioPlayerService
+   - Khong phai MVC UI controller, nhung la background controller cho audio.
+   - Quan ly MediaPlayer.
+   - Luu tien trinh nghe vao UserDataStore.
+
+9. DownloadWorker
+   - Background controller cho viec tai file offline.
+   - Luu metadata sach da tai vao UserDataStore.
+
+10. LibraryFragment
+   - Dieu khien fragment_library.xml.
+   - Lay "Gan day" va "Da tai" tu UserDataStore.
+   - Bam sach -> BookDetailActivity.
+   - Nhan giu sach da tai -> popup xoa/chia se.
+
+11. ChallengeFragment
+   - Lay ChallengeStats tu UserDataStore.
+   - Tao ChallengeItem theo ngay/thang.
+   - Hien bang ChallengeAdapter.
+
+12. DiscoverFragment
+   - Lay danh sach card tu Firestore collection "discover".
+   - Bat click card de mo ContentListActivity, LeaderboardActivity, InviteFriendsActivity,
+     hoac chuyen tab trong MainActivity.
+
+13. ContentListActivity
+   - Nhan CONTENT_TYPE tu Intent.
+   - Chon Firestore collection tuong ung.
+   - Hien danh sach sach noi bat va tat ca sach.
+
+14. LeaderboardActivity
+   - Spinner chon danh muc.
+   - Doc Firestore, xao tron va hien ranking.
+   - Click item -> BookDetailActivity.
+
+15. InviteFriendsActivity
+   - Gom sach tu nhieu collection.
+   - Cho chon checkbox.
+   - Tao ACTION_SEND de chia se loi moi.
+
+16. UserProfileActivity
+   - Hien profile user Firebase.
+   - Chon avatar bang ACTION_PICK.
+   - Luu ten/email/password.
+   - Dang xuat ve LoginActivity.
+
+17. SleepTimerReceiver
+   - Controller cho broadcast hen gio.
+   - Nhan broadcast tu AlarmManager.
+   - Gui ACTION_PAUSE den AudioPlayerService.
+
+18. BatteryLowReceiver
+   - Controller cho broadcast pin yeu.
+   - Nhan ACTION_BATTERY_LOW tu Android.
+   - Tao notification canh bao pin yeu.
+
+
+4. Tom tat MVC theo bang
+------------------------
+
+Model:
+- BookItem
+- LibBookItem
+- ChallengeItem
+- DiscoverItem
+- PodCourseItem
+- UserDataStore.ChallengeStats
+
+View:
+- Tat ca file activity_*.xml
+- Tat ca file fragment_*.xml
+- Tat ca file item_*.xml
+- dialog_choose_content.xml
+
+Controller:
+- Activity
+- Fragment
+- RecyclerView Adapter
+- Service
+- Worker
+- BroadcastReceiver
+
+
+5. Luu y ve Android MVC
+-----------------------
+Trong Android, Activity va Fragment thuong vua gan View, vua bat su kien, vua goi data.
+Nen chung co vai tro Controller trong bai hoc MVC.
+
+Adapter cung la Controller nho vi no:
+- Nhan Model.
+- Inflate item layout.
+- Bind data len View.
+- Bat click tung item.
+
+Service/Worker/BroadcastReceiver khong phai View Controller truc tiep,
+nhung la component dieu phoi luong nen van duoc giai thich trong phan Controller/background flow.

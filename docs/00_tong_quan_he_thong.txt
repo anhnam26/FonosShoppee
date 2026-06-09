@@ -1,0 +1,234 @@
+TONG QUAN HE THONG FONOS SHOPPEE
+================================
+
+1. Muc tieu ung dung
+--------------------
+Fonos Shoppee la ung dung sach noi bang Java + XML. Ung dung co cac nhom chuc nang chinh:
+
+- Dang nhap / dang ky tai khoan bang Firebase Authentication.
+- Man hinh chinh co BottomNavigationView de chuyen giua cac tab:
+  + Sach
+  + PodCourse
+  + Kham pha
+  + Thu thach
+  + Thu vien
+- Tai du lieu sach, podcourse, kham pha tu Firebase Firestore.
+- Mo chi tiet sach, phat audio bang foreground Service.
+- Tai file audio ve may bang WorkManager de nghe offline.
+- Luu tien trinh nghe, lich su gan day, thu thach theo tung user.
+- Luu sach da tai theo tung thiet bi.
+- Broadcast:
+  + SleepTimerReceiver: den gio hen thi tam dung audio.
+  + BatteryLowReceiver: khi he thong bao pin yeu thi hien notification.
+
+
+2. Cau truc thu muc chinh
+-------------------------
+app/src/main/java/com/example/fonosshoppee
+
+- Activity:
+  + LoginActivity.java
+  + RegisterActivity.java
+  + MainActivity.java
+  + BookDetailActivity.java
+  + ContentListActivity.java
+  + LeaderboardActivity.java
+  + InviteFriendsActivity.java
+  + UserProfileActivity.java
+
+- Fragment:
+  + BooksFragment.java
+  + AudiobooksFragment.java
+  + EbooksFragment.java
+  + SummariesFragment.java
+  + PodCourseFragment.java
+  + DiscoverFragment.java
+  + ChallengeFragment.java
+  + LibraryFragment.java
+
+- Adapter:
+  + BookAdapter.java
+  + BooksPagerAdapter.java
+  + Adapter noi bo trong cac Fragment/Activity:
+    DiscoverAdapter, ChallengeAdapter, LibBookAdapter, MenuAdapter,
+    MainCategoryAdapter, PodAdapter, InviteAdapter, LeaderboardAdapter.
+
+- Model:
+  + BookItem.java
+  + LibBookItem.java
+  + ChallengeItem.java
+  + DiscoverItem.java
+  + PodCourseItem.java
+
+- Data:
+  + UserDataStore.java
+
+- Service:
+  + AudioPlayerService.java
+
+- Worker:
+  + DownloadWorker.java
+
+- Receiver:
+  + SleepTimerReceiver.java
+  + BatteryLowReceiver.java
+
+
+3. Luong khoi dong app
+----------------------
+AndroidManifest.xml khai bao LoginActivity la LAUNCHER Activity.
+
+Flow:
+
+Nguoi dung bam icon app
+-> Android mo LoginActivity
+-> LoginActivity.onStart()
+-> FirebaseAuth.getCurrentUser()
+   + Neu currentUser != null:
+     -> startActivity(MainActivity)
+     -> finish LoginActivity
+   + Neu currentUser == null:
+     -> O lai man dang nhap
+
+Ly do lam nhu vay:
+- Firebase Authentication co cache phien dang nhap.
+- Lan sau mo app, neu da dang nhap thi Firebase van nho user.
+- Khi mat mang, neu tai khoan da duoc cache truoc do thi currentUser van co,
+  vi vay app van vao duoc MainActivity va nghe offline trong Thu vien -> Da tai.
+
+
+4. Luong man hinh chinh
+-----------------------
+MainActivity chua:
+
+- fragment_container: noi hien Fragment hien tai.
+- bottom_navigation: menu 5 tab.
+- miniPlayerLayout: thanh phat nho o duoi khi dang co audio.
+- ivGlobalAvatar: avatar mo trang UserProfileActivity.
+
+Flow tab:
+
+MainActivity
+-> BottomNavigationView.OnItemSelectedListener
+   + nav_books     -> BooksFragment
+   + nav_podcourse -> PodCourseFragment
+   + nav_discover  -> DiscoverFragment
+   + nav_challenge -> ChallengeFragment
+   + nav_library   -> LibraryFragment
+
+MainActivity dung FragmentTransaction.replace() de thay Fragment trong fragment_container.
+
+
+5. Luong nghe sach tong quat
+----------------------------
+Tu bat ky danh sach sach nao:
+
+Book item duoc bam
+-> BookAdapter tao Intent den BookDetailActivity
+-> truyen extras:
+   + BOOK_TITLE
+   + BOOK_AUTHOR
+   + BOOK_COVER
+   + AUDIO_URL
+-> BookDetailActivity hien thong tin sach
+-> startForegroundService(AudioPlayerService)
+-> bindService(AudioPlayerService)
+-> bam nut play
+-> AudioPlayerService.playAudio(audioUrl)
+-> MediaPlayer.prepareAsync()
+-> onPrepared()
+-> MediaPlayer.start()
+-> Service cap nhat tien trinh nghe vao UserDataStore
+-> MainActivity mini player co the dieu khien pause/resume.
+
+
+6. Luong nghe offline tong quat
+-------------------------------
+Bam nut tai trong BookDetailActivity:
+
+btnDownload
+-> tao OneTimeWorkRequest
+-> WorkManager chay DownloadWorker.doWork() o background
+-> DownloadWorker tai file mp3 ve getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+-> UserDataStore.saveDownloadedBook() luu metadata file da tai
+-> LibraryFragment tab "Da tai" doc UserDataStore.getDownloadedBooks()
+-> bam sach da tai
+-> BookDetailActivity nhan AUDIO_URL la duong dan file local
+-> AudioPlayerService phat file local bang MediaPlayer
+
+Neu mat mang:
+- Firebase co the khong tai du lieu online moi.
+- Thu vien -> Da tai van doc file local tren may.
+- Sach da tai co the phat offline.
+
+
+7. Luong thu thach tong quat
+----------------------------
+Thu thach khong lay chung tu Firestore nua, vi tien trinh phai rieng theo user.
+
+MainActivity.onCreate/onResume
+-> UserDataStore.recordAppOpened()
+-> luu ngay dang nhap theo FirebaseAuth.uid
+
+AudioPlayerService dang phat
+-> moi giay goi UserDataStore.recordListening()
+-> cong thoi gian nghe theo ngay va theo thang
+
+ChallengeFragment.onCreateView/onResume
+-> UserDataStore.getChallengeStats()
+-> tao danh sach:
+   Theo ngay:
+   + Dang nhap vao Fonos hom nay
+   + Nghe Fonos trong 15 phut
+   Theo thang:
+   + Nghe Fonos trong 300 phut
+   + Dang nhap Fonos 15 ngay trong thang
+   + Dang nhap Fonos 3 ngay lien tiep
+-> ChallengeAdapter hien progress.
+
+
+8. Cac thanh phan background
+----------------------------
+- AudioPlayerService:
+  Chay foreground service de phat audio va giu nhac tiep tuc khi roi man chi tiet.
+
+- DownloadWorker:
+  Chay background worker de tai file audio, khong lam treo UI.
+
+- SleepTimerReceiver:
+  Duoc AlarmManager goi sau so phut nguoi dung chon, gui ACTION_PAUSE den AudioPlayerService.
+
+- BatteryLowReceiver:
+  Duoc he thong Android goi khi co ACTION_BATTERY_LOW, tao notification "Pin yeu".
+
+
+9. Cac nguon du lieu
+--------------------
+- FirebaseAuth:
+  Dang nhap, dang ky, lay currentUser, signOut, update profile.
+
+- Firestore:
+  Lay sach, podcourse, discover cards, bang xep hang, danh sach moi ban.
+
+- SharedPreferences:
+  UserDataStore luu du lieu nho:
+  + login streak
+  + ngay dang nhap trong thang
+  + thoi gian nghe theo ngay/thang
+  + lich su gan day theo user
+  + metadata sach da tai theo thiet bi
+
+- File system app-specific external files:
+  Luu file .mp3 da tai ve trong thu muc Music cua app.
+
+
+10. Luu y khi van dap code
+--------------------------
+- Activity/Fragment la noi dieu khien UI va bat su kien nut bam.
+- Layout XML la View.
+- Model class chi giu du lieu.
+- Adapter noi Model voi RecyclerView item layout.
+- Intent dung de chuyen Activity, gui action share, gui ACTION_PAUSE, mo gallery.
+- Service dung cho viec phat audio lau dai.
+- Worker dung cho viec tai file background.
+- BroadcastReceiver dung de nhan su kien he thong/app nhu hen gio tat nhac va pin yeu.
