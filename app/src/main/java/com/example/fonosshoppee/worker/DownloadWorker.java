@@ -6,10 +6,13 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import com.example.fonosshoppee.data.UserDataStore;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,9 +22,9 @@ import java.net.URL;
 
 public class DownloadWorker extends Worker {
 
-    private NotificationManager notificationManager;
     private static final String CHANNEL_ID = "download_channel";
     private static final int NOTIFICATION_ID = 1999;
+    private final NotificationManager notificationManager;
 
     public DownloadWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -33,59 +36,65 @@ public class DownloadWorker extends Worker {
     public Result doWork() {
         String downloadUrl = getInputData().getString("AUDIO_URL");
         String bookTitle = getInputData().getString("BOOK_TITLE");
+        String bookAuthor = getInputData().getString("BOOK_AUTHOR");
+        String bookCover = getInputData().getString("BOOK_COVER");
 
-        if (downloadUrl == null) return Result.failure();
+        if (downloadUrl == null || downloadUrl.isEmpty()) return Result.failure();
+        if (bookTitle == null || bookTitle.trim().isEmpty()) bookTitle = "Sach";
 
         createNotificationChannel();
 
+        HttpURLConnection connection = null;
         try {
             URL url = new URL(downloadUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection = (HttpURLConnection) url.openConnection();
             connection.connect();
 
             int fileLength = connection.getContentLength();
-            InputStream input = connection.getInputStream();
+            File musicDir = getApplicationContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC);
+            if (musicDir == null) musicDir = getApplicationContext().getFilesDir();
+            File outputFile = new File(musicDir, safeFileName(bookTitle) + ".mp3");
 
-            File outputFile = new File(getApplicationContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC), bookTitle + ".mp3");
-            FileOutputStream output = new FileOutputStream(outputFile);
-
-            byte[] data = new byte[4096];
-            long total = 0;
-            int count;
-
-            // Biến này giúp ta chặn spam thông báo
-            int lastProgress = -1;
-
-            // Hiện thông báo 0% trước khi chạy vòng lặp
             notificationManager.notify(NOTIFICATION_ID, createProgressNotification(bookTitle, 0));
 
-            while ((count = input.read(data)) != -1) {
-                total += count;
-                int progress = (int) (total * 100 / fileLength);
+            try (InputStream input = connection.getInputStream();
+                 FileOutputStream output = new FileOutputStream(outputFile)) {
+                byte[] data = new byte[4096];
+                long total = 0;
+                int count;
+                int lastProgress = -1;
 
-                // CHỈ cập nhật thông báo ra màn hình khi số % tăng lên (Tối đa 100 lần thay vì hàng nghìn lần)
-                if (progress > lastProgress) {
-                    notificationManager.notify(NOTIFICATION_ID, createProgressNotification(bookTitle, progress));
-                    lastProgress = progress;
+                while ((count = input.read(data)) != -1) {
+                    total += count;
+                    output.write(data, 0, count);
+
+                    if (fileLength > 0) {
+                        int progress = (int) (total * 100 / fileLength);
+                        if (progress > lastProgress) {
+                            notificationManager.notify(NOTIFICATION_ID, createProgressNotification(bookTitle, progress));
+                            lastProgress = progress;
+                        }
+                    }
                 }
-
-                output.write(data, 0, count);
             }
 
-            output.flush();
-            output.close();
-            input.close();
+            UserDataStore.saveDownloadedBook(
+                    getApplicationContext(),
+                    bookTitle,
+                    bookAuthor,
+                    bookCover,
+                    downloadUrl,
+                    outputFile.getAbsolutePath()
+            );
 
-            // Tải xong thì báo Hoàn tất
             notificationManager.notify(NOTIFICATION_ID + 1, createSuccessNotification(bookTitle));
-
             return Result.success();
-
         } catch (Exception e) {
             e.printStackTrace();
-            // Lỗi mạng hoặc lỗi gì thì hiện thông báo lỗi
             notificationManager.notify(NOTIFICATION_ID + 2, createErrorNotification(bookTitle));
             return Result.failure();
+        } finally {
+            if (connection != null) connection.disconnect();
         }
     }
 
@@ -108,7 +117,7 @@ public class DownloadWorker extends Worker {
 
     private Notification createSuccessNotification(String title) {
         return new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
-                .setContentTitle("Hoàn tất!")
+                .setContentTitle("Hoàn tất")
                 .setContentText("Đã tải xong sách: " + title)
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setAutoCancel(true)
@@ -122,5 +131,9 @@ public class DownloadWorker extends Worker {
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setAutoCancel(true)
                 .build();
+    }
+
+    private String safeFileName(String title) {
+        return title.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
     }
 }

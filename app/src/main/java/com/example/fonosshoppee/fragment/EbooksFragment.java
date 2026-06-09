@@ -45,8 +45,6 @@ public class EbooksFragment extends Fragment {
     }
 
     private void loadEbooksFromFirebase() {
-        // Lưu ý: Tạm thời tôi đang lấy chung collection "audiobooks" để bạn thấy dữ liệu ngay.
-        // Sau này bạn có thể lên Firebase tạo collection "ebooks" rồi sửa chữ "audiobooks" ở dưới thành "ebooks" nhé.
         db.collection("audiobooks")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {

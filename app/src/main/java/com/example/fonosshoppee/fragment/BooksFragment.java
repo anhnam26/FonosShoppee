@@ -46,6 +46,15 @@ public class BooksFragment extends Fragment {
             }
         }).attach();
 
+        // DÁN ĐOẠN CODE NÀY VÀO CUỐI HÀM ONCREATEVIEW / ONVIEWCREATED CỦA BOOKSFRAGMENT:
+        if (getArguments() != null) {
+            int targetTab = getArguments().getInt("SUB_TAB_POSITION", 0);
+
+            // Nếu bạn đang dùng ViewPager2 hoặc ViewPager để trượt các tab con:
+            // Hãy thay "viewPager" bằng đúng tên biến ViewPager của bạn đặt trong class nhé
+            viewPager.setCurrentItem(targetTab, false);
+        }
+
         return view;
     }
 }
