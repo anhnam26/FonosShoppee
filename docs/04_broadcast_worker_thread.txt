@@ -1,0 +1,275 @@
+BROADCAST / WORKER / THREAD / SERVICE
+=====================================
+
+File nay dung de tra loi cac cau hoi trong anh:
+- MainActivity -> MainThread?
+- Dich vu dang dung chay thread hay chay qua service?
+- Khi qua ung dung khac thi no chay song song hay chay service khac?
+- Cac class tao thread song song ma AI thuong tao: AsyncTask, Service.
+
+
+1. MainActivity co chay tren MainThread khong?
+----------------------------------------------
+Co.
+
+Trong Android:
+- Activity lifecycle: onCreate, onStart, onResume, onPause, onStop, onDestroy chay tren Main/UI thread.
+- Fragment lifecycle cung chay tren Main/UI thread.
+- setOnClickListener cua button cung duoc goi tren Main/UI thread.
+- RecyclerView Adapter onBindViewHolder thuong duoc goi tren Main/UI thread.
+
+Trong project:
+- MainActivity.onCreate(), onStart(), onResume(), onStop() chay tren MainThread.
+- BottomNavigationView listener chay tren MainThread.
+- miniPlayer button click chay tren MainThread.
+- updateMiniPlayerRunnable dung Handler mac dinh trong MainActivity, cung chay tren thread tao Handler, o day la MainThread.
+
+Luu y:
+- MainThread khong nen lam viec nang nhu tai file lon.
+- Project da dung WorkManager de tai file audio, nen khong block UI.
+
+
+2. Service co phai thread rieng khong?
+--------------------------------------
+Khong mac dinh.
+
+Service la Android component chay background ve mat lifecycle, nhung cac callback:
+- onCreate()
+- onStartCommand()
+- onBind()
+- onDestroy()
+
+mac dinh van chay tren MainThread cua process app.
+
+Muon lam viec nang trong Service thi phai tu tao thread/Executor, hoac dung Worker.
+
+Trong project:
+- AudioPlayerService la Service foreground de giu audio.
+- Service lifecycle chay tren MainThread.
+- MediaPlayer.prepareAsync() dung bat dong bo noi bo cua MediaPlayer.
+- Playback audio do MediaPlayer/Android media framework quan ly, khong phai UI thread tu choi tung byte audio.
+- progressHandler trong AudioPlayerService post moi 1 giay tren MainThread de luu tien trinh nhe.
+
+
+3. Khi chuyen qua ung dung khac, audio chay nhu the nao?
+--------------------------------------------------------
+Flow:
+
+Nguoi dung dang nghe sach
+-> AudioPlayerService da startForegroundService
+-> Android hien foreground notification
+-> Nguoi dung bam Home hoac mo ung dung khac
+-> Activity co the onPause/onStop
+-> AudioPlayerService van con song neu chua bi stop/destroy
+-> MediaPlayer tiep tuc phat audio
+
+No khong phai tao "service khac".
+No la cung AudioPlayerService dang ton tai trong process app.
+
+MainActivity/BookDetailActivity co the unbind, nhung Service van co the tiep tuc chay vi da duoc startForegroundService.
+
+
+4. AsyncTask co dung trong project khong?
+-----------------------------------------
+Khong.
+
+Project hien khong dung AsyncTask.
+
+Thay vao do:
+- Firebase .get() la API bat dong bo.
+- MediaPlayer.prepareAsync() la bat dong bo.
+- WorkManager/DownloadWorker lam viec download background.
+- Glide tu quan ly background thread de tai anh.
+- Handler/Runnable dung de cap nhat UI/tien trinh moi giay.
+
+AsyncTask da cu va khong duoc khuyen khich trong Android moi.
+
+
+5. Worker chay thread nao?
+--------------------------
+Class: DownloadWorker.java
+
+DownloadWorker ke thua androidx.work.Worker.
+Phuong thuc doWork() chay tren background thread do WorkManager quan ly.
+
+Trong project:
+- doWork() mo HttpURLConnection.
+- doc InputStream tu internet.
+- ghi FileOutputStream vao file .mp3.
+- cap nhat notification tien trinh.
+- luu metadata vao UserDataStore.
+
+Vi doWork() khong chay tren MainThread, UI khong bi dung khi tai file.
+
+
+6. Firebase callback chay nhu the nao?
+--------------------------------------
+Firestore get():
+
+db.collection("...").get()
+-> yeu cau network/cache bat dong bo
+-> addOnSuccessListener(...)
+-> addOnFailureListener(...)
+
+Project khong tu tao thread cho Firebase.
+Firebase SDK tu quan ly viec network/cache.
+Callback thuong duoc goi ve main thread, sau do code update RecyclerView adapter.
+
+Vi vay:
+- Doc Firestore khong block UI.
+- Khi co data ve, adapter.notifyDataSetChanged() cap nhat UI.
+
+
+7. BroadcastReceiver la gi?
+---------------------------
+BroadcastReceiver la component nhan su kien broadcast tu:
+- He thong Android
+- App minh
+- App khac, tuy exported/permission
+
+Receiver nen lam viec ngan gon trong onReceive().
+Khong nen download file lon hoac xu ly nang trong onReceive().
+
+Project co 2 receiver:
+
+1. SleepTimerReceiver
+   - Nhan broadcast tu AlarmManager.
+   - Khi den gio hen tat, gui ACTION_PAUSE den AudioPlayerService.
+
+2. BatteryLowReceiver
+   - Nhan broadcast ACTION_BATTERY_LOW tu he thong Android.
+   - Tao notification canh bao pin yeu.
+
+
+8. SleepTimerReceiver
+---------------------
+Class: SleepTimerReceiver.java
+Khai bao: AndroidManifest.xml
+
+Nguon broadcast:
+- Do BookDetailActivity tao PendingIntent broadcast.
+
+Flow:
+
+BookDetailActivity.startSleepTimer(minutes)
+-> AlarmManager.set(...)
+-> pendingIntent = PendingIntent.getBroadcast(... SleepTimerReceiver ...)
+-> Den triggerTime, Android goi SleepTimerReceiver.onReceive()
+-> SleepTimerReceiver:
+   + Intent serviceIntent = new Intent(context, AudioPlayerService.class)
+   + serviceIntent.setAction("ACTION_PAUSE")
+   + context.startService(serviceIntent)
+-> AudioPlayerService.onStartCommand()
+   + neu action ACTION_PAUSE:
+     -> pauseAudio()
+
+
+9. BatteryLowReceiver
+---------------------
+Class: BatteryLowReceiver.java
+Khai bao: AndroidManifest.xml
+
+Nguon broadcast:
+- He thong Android gui Intent.ACTION_BATTERY_LOW khi pin yeu.
+
+Flow:
+
+Android system
+-> broadcast android.intent.action.BATTERY_LOW
+-> BatteryLowReceiver.onReceive(context, intent)
+-> kiem tra intent action
+-> Android 13+ kiem tra POST_NOTIFICATIONS da duoc cap hay chua
+-> createNotificationChannel()
+-> Tao PendingIntent mo MainActivity khi bam notification
+-> NotificationManagerCompat.notify()
+-> Nguoi dung thay notification "Pin yeu"
+
+Ly do can channel:
+- Android 8+ bat buoc notification phai co NotificationChannel.
+
+Ly do can check POST_NOTIFICATIONS:
+- Android 13+ yeu cau quyen runtime de hien notification.
+- Neu chua cap quyen thi receiver return de tranh loi.
+
+
+10. Broadcast trong Manifest
+----------------------------
+AndroidManifest.xml:
+
+- SleepTimerReceiver:
+  + exported=false
+  + Chi app minh goi bang PendingIntent noi bo.
+
+- BatteryLowReceiver:
+  + exported=true
+  + Co intent-filter ACTION_BATTERY_LOW
+  + Can nhan broadcast tu he thong Android.
+
+
+11. PendingIntent trong project
+-------------------------------
+PendingIntent la "goi hanh dong de Android thuc hien sau".
+
+Project dung PendingIntent o:
+
+1. BookDetailActivity.startSleepTimer()
+   - PendingIntent.getBroadcast()
+   - Sau X phut Android gui broadcast den SleepTimerReceiver.
+
+2. BatteryLowReceiver
+   - PendingIntent.getActivity()
+   - Khi bam notification pin yeu, Android mo MainActivity.
+
+
+12. Notification trong project
+------------------------------
+1. AudioPlayerService:
+   - Foreground notification "Fonos Shoppee Dang Phat".
+   - De service duoc phep chay dai hon khi app ra background.
+
+2. DownloadWorker:
+   - Notification progress khi dang tai.
+   - Notification thanh cong/loi sau khi tai.
+
+3. BatteryLowReceiver:
+   - Notification canh bao pin yeu.
+
+
+13. Tong ket thread/service/background
+--------------------------------------
+Bang tom tat:
+
+MainActivity / Activity / Fragment:
+- Chay tren MainThread.
+- Xu ly UI, click, chuyen trang.
+
+RecyclerView Adapter:
+- Bind UI tren MainThread.
+- Click item tren MainThread.
+
+Firebase Firestore:
+- Network/cache async do Firebase SDK xu ly.
+- Callback ve de update UI.
+
+AudioPlayerService:
+- Service foreground.
+- Lifecycle mac dinh MainThread.
+- MediaPlayer xu ly playback async/noi bo.
+
+DownloadWorker:
+- Background thread do WorkManager quan ly.
+- Dung cho download/file IO.
+
+SleepTimerReceiver:
+- Nhan broadcast ngan gon.
+- Goi service pause audio.
+
+BatteryLowReceiver:
+- Nhan system broadcast pin yeu.
+- Tao notification.
+
+Glide:
+- Tai anh background do Glide quan ly.
+
+AsyncTask:
+- Khong su dung.

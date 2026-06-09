@@ -1,0 +1,325 @@
+DU LIEU FIREBASE / LOCAL / INTENT EXTRAS
+========================================
+
+1. Firebase Authentication
+--------------------------
+Dung trong:
+- LoginActivity
+- RegisterActivity
+- MainActivity thong qua UserDataStore.currentUserKey()
+- UserProfileActivity
+
+Du lieu:
+- currentUser.uid: dinh danh tai khoan, dung de tach tien trinh theo user.
+- currentUser.email: hien tren profile.
+- currentUser.displayName: ten profile.
+- currentUser.photoUrl: avatar neu co.
+
+Chuc nang:
+- signInWithEmailAndPassword()
+- createUserWithEmailAndPassword()
+- getCurrentUser()
+- updateProfile()
+- updateEmail()
+- updatePassword()
+- signOut()
+
+
+2. Firestore collections dang dung
+----------------------------------
+Trong project co cac collection duoc goi:
+
+- audiobooks
+  + AudiobooksFragment
+  + EbooksFragment
+  + SummariesFragment
+
+- books
+  + ContentListActivity default
+  + LeaderboardActivity tat ca danh muc
+  + InviteFriendsActivity
+
+- discover
+  + DiscoverFragment
+
+- podcourses
+  + PodCourseFragment
+
+- sleep_stories
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+- relax_music
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+- podcasts
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+- meditations
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+- english_books
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+- free_books
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+- kids_books
+  + ContentListActivity
+  + LeaderboardActivity
+  + InviteFriendsActivity
+
+
+3. Model fields can co tren Firestore
+-------------------------------------
+BookItem:
+- title
+- author
+- coverUrl
+- audioUrl
+
+DiscoverItem:
+- title
+- imageUrl
+- colorCode
+- heightDp
+- fullWidth
+
+PodCourseItem:
+- title
+- author
+- coverUrl
+
+Neu Firestore thieu field:
+- Text co the rong/null.
+- CoverUrl rong thi adapter dung background mau tam.
+- AudioUrl rong thi BookDetailActivity bao sach chua co audio.
+
+
+4. UserDataStore luu gi?
+------------------------
+File: UserDataStore.java
+Co che: SharedPreferences + JSON string.
+
+User-specific preferences:
+- Ten file SharedPreferences:
+  fonos_user_<uid>
+
+Neu chua co Firebase user:
+- fallback key: local_user
+
+Du lieu theo user:
+- last_login_date
+  + ngay user mo app gan nhat.
+
+- login_streak
+  + so ngay dang nhap lien tiep.
+
+- login_days_yyyy-MM
+  + tap hop ngay user da dang nhap trong thang.
+
+- listen_day_yyyy-MM-dd
+  + tong thoi gian nghe trong ngay, milliseconds.
+
+- listen_month_yyyy-MM
+  + tong thoi gian nghe trong thang, milliseconds.
+
+- recent_books
+  + JSON array lich su gan day theo user.
+  + moi item luu:
+    * title
+    * author
+    * coverUrl
+    * audioUrl
+    * localAudioPath
+    * positionMs
+    * durationMs
+    * updatedAt
+
+Device-specific preferences:
+- Ten file SharedPreferences:
+  fonos_device_library
+
+Du lieu theo thiet bi:
+- downloaded_books
+  + JSON array sach da tai tren may.
+  + moi item luu:
+    * title
+    * author
+    * coverUrl
+    * audioUrl: remote url ban dau
+    * localAudioPath: duong dan file .mp3 tren may
+    * downloadedAt
+
+
+5. Vi sao Gan day theo user, Da tai theo thiet bi?
+--------------------------------------------------
+Gan day:
+- Yeu cau: moi tai khoan co lich su nghe rieng.
+- UserDataStore dung FirebaseAuth.uid de tao SharedPreferences rieng.
+
+Da tai:
+- Yeu cau: xem tren dien thoai do da tai sach chua.
+- File .mp3 nam tren thiet bi.
+- Metadata downloaded_books luu theo device, khong tach user.
+
+
+6. Intent extras quan trong
+---------------------------
+
+BookDetailActivity:
+- BOOK_TITLE
+- BOOK_AUTHOR
+- BOOK_COVER
+- AUDIO_URL
+- START_POSITION
+- AUTO_PLAY
+
+Nguon gui:
+- BookAdapter
+- LeaderboardActivity
+- LibraryFragment
+- MainActivity mini player
+
+ContentListActivity:
+- CONTENT_TYPE
+
+Gia tri CONTENT_TYPE:
+- SLEEP_STORY
+- RELAX_MUSIC
+- PODCAST
+- MEDITATION
+- ENGLISH_BOOKS
+- FREE_BOOKS
+- KIDS
+- NEW_RELEASES
+
+AudioPlayerService:
+- BOOK_TITLE
+- BOOK_AUTHOR
+- BOOK_COVER
+- Action:
+  + ACTION_PAUSE
+
+Invite/User share:
+- ACTION_SEND
+- EXTRA_TEXT
+
+Library share audio:
+- ACTION_SEND
+- EXTRA_STREAM
+- FLAG_GRANT_READ_URI_PERMISSION
+
+UserProfile avatar:
+- ACTION_PICK
+- type image/*
+
+
+7. File local offline
+---------------------
+DownloadWorker luu file tai ve:
+
+getApplicationContext().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+-> ten file = safeFileName(bookTitle) + ".mp3"
+
+Thu muc nay la app-specific external storage:
+- Khong can xin READ/WRITE external storage kieu cu.
+- App co quyen doc/ghi file cua minh.
+
+LibraryFragment -> Da tai:
+- Doc metadata downloaded_books.
+- Kiem tra localAudioPath ton tai.
+- Scan them cac file .mp3 trong thu muc Music cua app de hien ca file cu.
+
+
+8. Notification channels
+------------------------
+Android 8+ can NotificationChannel.
+
+Project co:
+- AudioPlayerChannel
+  + AudioPlayerService
+  + notification foreground audio
+
+- download_channel
+  + DownloadWorker
+  + notification tai sach
+
+- battery_low_channel
+  + BatteryLowReceiver
+  + notification pin yeu
+
+
+9. Manifest components
+----------------------
+AndroidManifest.xml khai bao:
+
+Permissions:
+- INTERNET
+- POST_NOTIFICATIONS
+- FOREGROUND_SERVICE
+- FOREGROUND_SERVICE_MEDIA_PLAYBACK
+- SCHEDULE_EXACT_ALARM
+
+Activities:
+- LoginActivity la launcher
+- RegisterActivity
+- MainActivity
+- UserProfileActivity
+- BookDetailActivity
+- LeaderboardActivity
+- ContentListActivity
+- InviteFriendsActivity
+
+Service:
+- AudioPlayerService
+  + exported=false
+  + foregroundServiceType=mediaPlayback
+
+Receivers:
+- SleepTimerReceiver
+  + exported=false
+
+- BatteryLowReceiver
+  + exported=true
+  + intent-filter android.intent.action.BATTERY_LOW
+
+Provider:
+- androidx.core.content.FileProvider
+  + authority ${applicationId}.fileprovider
+  + path config @xml/file_paths
+
+
+10. Van dap nhanh
+-----------------
+Hoi: Neu khong co ID user thi co luu thu thach rieng duoc khong?
+Tra loi: Khong chac chan. Can FirebaseAuth.uid de tach SharedPreferences theo tung user.
+
+Hoi: FirebaseAuth co giup offline login khong?
+Tra loi: Co cache currentUser. Neu user da dang nhap truoc do, mo app khi mat mang van co currentUser.
+
+Hoi: Sach offline co can Firebase khong?
+Tra loi: Khong. LibraryFragment -> Da tai doc file local va metadata local.
+
+Hoi: Download co lam treo UI khong?
+Tra loi: Khong, vi dung WorkManager/DownloadWorker background.
+
+Hoi: Service co phai thread rieng khong?
+Tra loi: Khong mac dinh. Service la component background, lifecycle van main thread. Viec phat audio do MediaPlayer va Android media framework xu ly.
+
+Hoi: Project co AsyncTask khong?
+Tra loi: Khong.
+
+Hoi: Broadcast pin yeu co luong nao?
+Tra loi: Android gui ACTION_BATTERY_LOW -> BatteryLowReceiver -> tao notification -> bam notification mo MainActivity.

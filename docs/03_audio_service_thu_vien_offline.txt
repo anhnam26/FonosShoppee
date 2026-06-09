@@ -1,0 +1,375 @@
+LUONG AUDIO SERVICE / THU VIEN / OFFLINE
+========================================
+
+1. Muc tieu
+-----------
+Phan audio can dam bao:
+- Bam sach thi vao BookDetailActivity.
+- Bam play thi phat audio.
+- Audio van co the chay khi roi man chi tiet.
+- MainActivity co mini player.
+- Luu "Gan day" theo tai khoan.
+- Luu thoi gian nghe cho Thu thach.
+- Tai sach ve may de nghe offline.
+- Thu vien "Da tai" doc file tren thiet bi va co the phat offline.
+
+
+2. Cac class tham gia
+---------------------
+- BookAdapter
+- BookDetailActivity
+- AudioPlayerService
+- MainActivity
+- UserDataStore
+- DownloadWorker
+- LibraryFragment
+- LibBookItem
+- FileProvider khai bao trong AndroidManifest.xml
+
+
+3. Mo sach tu danh sach online
+------------------------------
+Flow:
+
+Nguoi dung click item sach
+-> BookAdapter.onBindViewHolder().itemView.setOnClickListener()
+-> Intent BookDetailActivity
+-> putExtra:
+   + BOOK_TITLE
+   + BOOK_AUTHOR
+   + BOOK_COVER
+   + AUDIO_URL
+-> BookDetailActivity.onCreate()
+-> readIntentData()
+-> renderBookInfo()
+
+Tai sao dung Intent extras:
+- Activity moi can thong tin de hien title/author/cover.
+- Activity moi can AUDIO_URL de phat dung file audio.
+
+
+4. BookDetailActivity ket noi AudioPlayerService
+------------------------------------------------
+BookDetailActivity khong tu phat audio truc tiep.
+No ket noi toi AudioPlayerService.
+
+Flow:
+
+BookDetailActivity.startAndBindAudioService()
+-> Intent serviceIntent = new Intent(this, AudioPlayerService.class)
+-> putExtra BOOK_TITLE, BOOK_AUTHOR, BOOK_COVER
+-> ContextCompat.startForegroundService(this, serviceIntent)
+-> bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
+
+Giai thich:
+- startForegroundService:
+  Tao/chay service de no co the tiep tuc phat nhac khi Activity khong con o foreground.
+
+- bindService:
+  Cho BookDetailActivity lay object AudioPlayerService qua LocalBinder.
+  Sau khi bind thanh cong, Activity goi truc tiep:
+  + playAudio()
+  + pauseAudio()
+  + resumeAudio()
+  + seekTo()
+  + rewind()
+  + fastForward()
+  + setPlaybackSpeed()
+
+
+5. ServiceConnection
+--------------------
+Trong BookDetailActivity:
+
+serviceConnection.onServiceConnected()
+-> binder.getService()
+-> audioService = service
+-> isBound = true
+-> setupPlayerListener()
+
+Neu service dang phat dung sach hien tai:
+-> syncPlayerProgress()
+-> cap nhat icon play/pause
+-> chay updateSeekBarRunnable
+
+Neu mo tu Thu vien voi AUTO_PLAY = true:
+-> startSelectedAudio(startPositionMs)
+
+
+6. Bam play/pause
+-----------------
+Nut: btnPlayAudio trong BookDetailActivity
+
+Flow:
+
+btnPlayAudio click
+-> togglePlayback()
+   + Neu audioService dang load dung audioUrl:
+     - Neu dang phat:
+       -> audioService.pauseAudio()
+       -> icon play
+       -> saveCurrentProgress()
+     - Neu dang pause:
+       -> audioService.resumeAudio()
+       -> icon pause
+       -> update seekbar
+   + Neu la sach moi:
+     -> startSelectedAudio(startPositionMs)
+     -> audioService.playAudio(audioUrl)
+
+
+7. AudioPlayerService.playAudio()
+---------------------------------
+Class: AudioPlayerService.java
+
+Flow:
+
+playAudio(url)
+-> stopProgressTracking()
+-> currentAudioUrl = url
+-> mediaPlayer.reset()
+-> applyAudioAttributes()
+-> mediaPlayer.setDataSource(url)
+-> mediaPlayer.setOnPreparedListener(...)
+-> mediaPlayer.setOnCompletionListener(...)
+-> mediaPlayer.setOnErrorListener(...)
+-> mediaPlayer.prepareAsync()
+
+onPrepared:
+-> applyPlaybackSpeed()
+-> mediaPlayer.start()
+-> startProgressTracking()
+-> listener.onPrepared(duration)
+
+onCompletion:
+-> stopProgressTracking()
+-> UserDataStore.saveRecentBook(... position = duration)
+-> listener.onCompletion()
+
+Tai sao prepareAsync:
+- prepare() co the block UI/thread service.
+- prepareAsync() cho MediaPlayer load audio bat dong bo.
+
+
+8. Luu tien trinh nghe va thu thach
+-----------------------------------
+AudioPlayerService co Handler progressHandler va progressRunnable.
+
+Flow moi 1 giay:
+
+progressRunnable.run()
+-> neu mediaPlayer dang playing:
+   + delta = now - lastProgressTickAt
+   + UserDataStore.recordListening(
+       title, author, cover, audioUrl,
+       currentPosition,
+       duration,
+       delta
+     )
+   + postDelayed(this, 1000)
+
+UserDataStore.recordListening():
+-> cong listenedMs vao:
+   + listen_day_yyyy-MM-dd
+   + listen_month_yyyy-MM
+-> saveRecentBook()
+   + cap nhat lich su "Gan day" theo user
+   + luu positionMs/durationMs
+
+Ket qua:
+- ChallengeFragment co du lieu de hien "Nghe Fonos 15p/300p".
+- LibraryFragment tab "Gan day" biet sach nao da nghe va nghe toi dau.
+
+
+9. Mini player trong MainActivity
+---------------------------------
+MainActivity.onStart()
+-> bindService(AudioPlayerService)
+
+onServiceConnected()
+-> audioService = binder.getService()
+-> handler.post(updateMiniPlayerRunnable)
+
+updateMiniPlayerRunnable moi 1 giay:
+-> updateMiniPlayerUI()
+
+updateMiniPlayerUI():
+-> Neu audioService.getCurrentAudioUrl() khong rong:
+   + hien miniPlayerLayout
+   + set title/author/cover
+   + set icon play/pause
+-> Neu khong co audio:
+   + an miniPlayerLayout
+
+Event:
+- Bam miniPlayerBtnPlay:
+  -> pauseAudio() hoac resumeAudio()
+
+- Bam miniPlayerLayout:
+  -> Intent BookDetailActivity voi current BOOK_TITLE, BOOK_AUTHOR, BOOK_COVER, AUDIO_URL
+
+
+10. Tua, seekbar, toc do
+------------------------
+BookDetailActivity:
+
+- seekBarAudio:
+  + nguoi dung keo -> audioService.seekTo(progress)
+
+- btnRewind15:
+  + audioService.rewind(15000)
+
+- btnForward30:
+  + audioService.fastForward(30000)
+
+- seekBarSpeedVertical:
+  + progress -> speed = 0.5 + progress / 10
+  + audioService.setPlaybackSpeed(speed)
+
+AudioPlayerService:
+- setPlaybackSpeed(speed):
+  + luu currentPlaybackSpeed
+  + neu Android >= M:
+    -> mediaPlayer.setPlaybackParams(speed)
+
+
+11. Hen gio tat nhac
+--------------------
+Nut: btnSleepTimer trong BookDetailActivity.
+
+Flow:
+
+btnSleepTimer click
+-> showSleepTimerMenu()
+-> PopupMenu cac lua chon:
+   + Khong hen gio
+   + 15 phut
+   + 30 phut
+   + 45 phut
+   + 1 gio
+   + 2 gio
+   + 3 gio
+   + 5 gio
+
+Neu chon so phut:
+-> startSleepTimer(minutes)
+-> AlarmManager.set(RTC_WAKEUP, triggerTime, pendingIntent)
+-> pendingIntent la broadcast den SleepTimerReceiver
+
+Den gio:
+-> Android goi SleepTimerReceiver.onReceive()
+-> tao Intent AudioPlayerService
+-> setAction("ACTION_PAUSE")
+-> context.startService(serviceIntent)
+-> AudioPlayerService.onStartCommand()
+-> neu ACTION_PAUSE:
+   + pauseAudio()
+
+
+12. Tai sach offline
+--------------------
+Nut: btnDownload trong BookDetailActivity.
+
+Flow:
+
+btnDownload click
+-> enqueueDownload()
+-> neu audioUrl rong: Toast
+-> neu audioUrl la file local: Toast da co tren may
+-> Tao Data:
+   + AUDIO_URL
+   + BOOK_TITLE
+   + BOOK_AUTHOR
+   + BOOK_COVER
+-> Tao OneTimeWorkRequest(DownloadWorker)
+-> WorkManager.enqueue()
+
+DownloadWorker.doWork():
+-> lay inputData
+-> HttpURLConnection tai audioUrl
+-> ghi file vao getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+-> UserDataStore.saveDownloadedBook(
+     title, author, cover, remoteAudioUrl, localAudioPath
+   )
+-> notification hoan tat
+
+
+13. Thu vien "Gan day"
+----------------------
+LibraryFragment tab "Gan day":
+
+loadBooks()
+-> UserDataStore.getRecentBooks(context)
+-> doc SharedPreferences theo current Firebase uid
+-> tra List<LibBookItem>
+-> LibBookAdapter hien:
+   + title
+   + author
+   + cover
+   + progressText
+
+Click sach gan day:
+-> openBook(item)
+-> AUDIO_URL = item.audioUrl
+-> START_POSITION = item.positionMs
+-> AUTO_PLAY = true
+-> BookDetailActivity
+-> service seek den START_POSITION va phat tiep
+
+
+14. Thu vien "Da tai"
+---------------------
+LibraryFragment tab "Da tai":
+
+loadBooks()
+-> UserDataStore.getDownloadedBooks(context)
+-> doc metadata da tai trong SharedPreferences device
+-> kiem tra file local co ton tai khong
+-> scan them file .mp3 trong thu muc Music cua app
+-> tra List<LibBookItem>
+
+Click sach da tai:
+-> AUDIO_URL = localAudioPath
+-> START_POSITION = positionMs
+-> AUTO_PLAY = true
+-> BookDetailActivity
+-> AudioPlayerService phat file local
+
+Nhan giu sach da tai:
+-> PopupMenu:
+   + Xoa khoi may
+   + Chia se
+
+Xoa:
+-> UserDataStore.removeDownloadedBook(deleteFile = true)
+-> xoa metadata va file .mp3
+
+Chia se:
+-> FileProvider.getUriForFile()
+-> ACTION_SEND audio/mpeg
+-> EXTRA_STREAM = uri
+-> FLAG_GRANT_READ_URI_PERMISSION
+
+
+15. FileProvider
+----------------
+Android khong cho share truc tiep duong dan file noi bo.
+Vì vay app khai bao FileProvider trong AndroidManifest.xml:
+
+androidx.core.content.FileProvider
+authority: ${applicationId}.fileprovider
+paths: res/xml/file_paths.xml
+
+file_paths.xml cho phep share:
+- external-files-path Music/
+- files-path .
+
+
+16. Offline khi mat mang
+------------------------
+Neu mat mang:
+- Firebase get() co the fail, cac man online khong tai du lieu moi.
+- LoginActivity van co the bo qua login neu FirebaseAuth da cache currentUser.
+- LibraryFragment -> Da tai van doc SharedPreferences va file local.
+- AudioPlayerService phat file local bang MediaPlayer.
+- Thu thach va Gan day van luu local theo user.

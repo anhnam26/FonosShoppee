@@ -1,0 +1,386 @@
+SO DO CLASS VA QUAN HE HE THONG
+===============================
+
+File nay "ve/list phac do" de thay moi quan he giua cac class.
+
+
+1. So do tong the
+-----------------
+
+                    +-------------------+
+                    |   LoginActivity   |
+                    +-------------------+
+                             |
+                      currentUser? / login
+                             v
+                    +-------------------+
+                    |   MainActivity    |
+                    +-------------------+
+        bottom nav /      |       |       \ avatar
+                  /       |       |        \
+                 v        v       v         v
+       +-------------+ +--------+ +-------------+ +-------------------+
+       |BooksFragment| |Discover| |ChallengeFrag| |UserProfileActivity|
+       +-------------+ +--------+ +-------------+ +-------------------+
+              |              |           |
+              |              |           v
+              |              |    +------------------+
+              |              |    | UserDataStore    |
+              |              |    +------------------+
+              |              |
+              |              v
+              |     +-------------------+
+              |     |Content/Leader/Invite|
+              |     +-------------------+
+              |
+              v
+      +-------------------+
+      | BookAdapter       |
+      +-------------------+
+              |
+              v
+      +-------------------+
+      | BookDetailActivity|
+      +-------------------+
+              |
+     start/bind service
+              v
+      +-------------------+
+      | AudioPlayerService|
+      +-------------------+
+              |
+    record progress / recent
+              v
+      +-------------------+
+      | UserDataStore     |
+      +-------------------+
+
+
+2. So do Auth
+-------------
+
+LoginActivity
+-> FirebaseAuth.signInWithEmailAndPassword()
+-> MainActivity
+
+RegisterActivity
+-> FirebaseAuth.createUserWithEmailAndPassword()
+-> MainActivity
+
+UserProfileActivity
+-> FirebaseAuth.getCurrentUser()
+-> updateProfile()
+-> updateEmail()
+-> updatePassword()
+-> signOut()
+-> LoginActivity
+
+
+3. So do Bottom Navigation
+--------------------------
+
+MainActivity.bottom_navigation
+-> nav_books
+   -> BooksFragment
+      -> ViewPager2
+         -> AudiobooksFragment
+         -> EbooksFragment
+         -> SummariesFragment
+
+-> nav_podcourse
+   -> PodCourseFragment
+
+-> nav_discover
+   -> DiscoverFragment
+
+-> nav_challenge
+   -> ChallengeFragment
+
+-> nav_library
+   -> LibraryFragment
+
+
+4. So do sach online den chi tiet
+---------------------------------
+
+Firestore collection
+-> document.toObject(BookItem.class)
+-> List<BookItem>
+-> BookAdapter
+-> item_book.xml
+-> click item
+-> Intent BookDetailActivity
+   extras:
+   - BOOK_TITLE
+   - BOOK_AUTHOR
+   - BOOK_COVER
+   - AUDIO_URL
+-> BookDetailActivity
+-> AudioPlayerService
+
+
+5. So do audio
+--------------
+
+BookDetailActivity
+-> startForegroundService(AudioPlayerService)
+-> bindService(AudioPlayerService)
+-> LocalBinder.getService()
+-> audioService.playAudio(url)
+-> MediaPlayer.setDataSource(url)
+-> MediaPlayer.prepareAsync()
+-> onPrepared()
+-> MediaPlayer.start()
+-> AudioPlayerService.startProgressTracking()
+-> UserDataStore.recordListening()
+
+MainActivity
+-> bindService(AudioPlayerService)
+-> update mini player title/author/cover/play state
+-> miniPlayerBtnPlay:
+   + pauseAudio()
+   + resumeAudio()
+
+
+6. So do hen gio tat nhac
+-------------------------
+
+BookDetailActivity.btnSleepTimer
+-> showSleepTimerMenu()
+-> startSleepTimer(minutes)
+-> AlarmManager.set(...)
+-> PendingIntent.getBroadcast(... SleepTimerReceiver ...)
+-> SleepTimerReceiver.onReceive()
+-> Intent AudioPlayerService action ACTION_PAUSE
+-> context.startService()
+-> AudioPlayerService.onStartCommand()
+-> pauseAudio()
+
+
+7. So do pin yeu
+----------------
+
+Android System
+-> ACTION_BATTERY_LOW
+-> BatteryLowReceiver.onReceive()
+-> check POST_NOTIFICATIONS permission
+-> createNotificationChannel()
+-> Notification "Pin yeu"
+-> user bam notification
+-> PendingIntent.getActivity()
+-> MainActivity
+
+
+8. So do download offline
+-------------------------
+
+BookDetailActivity.btnDownload
+-> enqueueDownload()
+-> WorkManager.enqueue(DownloadWorker)
+-> DownloadWorker.doWork()
+-> HttpURLConnection(downloadUrl)
+-> FileOutputStream(local .mp3)
+-> UserDataStore.saveDownloadedBook()
+-> Notification hoan tat
+
+LibraryFragment tab "Da tai"
+-> UserDataStore.getDownloadedBooks()
+-> List<LibBookItem>
+-> LibBookAdapter
+-> item_library_book.xml
+-> click item
+-> BookDetailActivity voi AUDIO_URL = localAudioPath
+-> AudioPlayerService phat file local
+
+
+9. So do "Gan day"
+------------------
+
+AudioPlayerService dang phat
+-> moi giay UserDataStore.recordListening()
+-> saveRecentBook()
+-> SharedPreferences theo uid user
+
+LibraryFragment tab "Gan day"
+-> UserDataStore.getRecentBooks()
+-> List<LibBookItem>
+-> click item
+-> BookDetailActivity:
+   + AUDIO_URL = remote/local url da luu
+   + START_POSITION = positionMs
+   + AUTO_PLAY = true
+-> phat tiep tu vi tri da nghe
+
+
+10. So do Thu thach
+-------------------
+
+MainActivity.onCreate/onResume
+-> UserDataStore.recordAppOpened()
+-> luu ngay dang nhap theo uid
+
+AudioPlayerService progressRunnable
+-> UserDataStore.recordListening()
+-> cong thoi gian nghe ngay/thang
+
+ChallengeFragment.onResume
+-> UserDataStore.getChallengeStats()
+-> Tao ChallengeItem:
+   + login hom nay
+   + nghe 15p/ngay
+   + nghe 300p/thang
+   + login 15 ngay/thang
+   + login 3 ngay lien tiep
+-> ChallengeAdapter
+-> item_challenge.xml
+
+
+11. So do Discover
+------------------
+
+Firestore "discover"
+-> DiscoverItem
+-> DiscoverAdapter
+-> item_discover_card.xml
+-> click title:
+   + Truyen ngu/Nhac -> BottomSheetDialog -> ContentListActivity
+   + Bang xep hang -> LeaderboardActivity
+   + Sach noi/Ebook/Tom tat -> MainActivity.switchToBooksSubTab()
+   + Ru ban/Tang qua -> InviteFriendsActivity
+   + PodCourse -> bottom nav podcourse
+   + Topic khac -> ContentListActivity voi CONTENT_TYPE
+
+
+12. So do ContentList
+---------------------
+
+ContentListActivity
+-> getIntent().getStringExtra("CONTENT_TYPE")
+-> switch CONTENT_TYPE
+-> chon Firestore collection
+-> loadDataFromFirebase()
+-> listFeatured + listAll
+-> BookAdapter
+-> BookDetailActivity
+
+
+13. So do Leaderboard
+---------------------
+
+LeaderboardActivity
+-> Spinner category
+-> position 0:
+   + loadAllCategoriesData()
+   + lay nhieu collection
+-> position > 0:
+   + loadRankingData(collectionNames[position])
+-> LeaderboardAdapter
+-> click item
+-> BookDetailActivity
+
+
+14. So do InviteFriends
+-----------------------
+
+InviteFriendsActivity
+-> loadAllBooks() tu nhieu collection
+-> InviteAdapter
+-> checkbox/item click
+-> selectedBooks Set<String>
+-> btnShare enabled/text
+-> ACTION_SEND text/plain
+
+
+15. Bang quan he nhanh cac class
+--------------------------------
+
+LoginActivity
+-> FirebaseAuth
+-> MainActivity / RegisterActivity
+
+RegisterActivity
+-> FirebaseAuth
+-> MainActivity
+
+MainActivity
+-> BooksFragment, PodCourseFragment, DiscoverFragment, ChallengeFragment, LibraryFragment
+-> AudioPlayerService
+-> UserProfileActivity
+-> UserDataStore
+
+BooksFragment
+-> BooksPagerAdapter
+-> AudiobooksFragment, EbooksFragment, SummariesFragment
+
+AudiobooksFragment/EbooksFragment/SummariesFragment
+-> FirebaseFirestore
+-> BookItem
+-> BookAdapter
+-> BookDetailActivity
+
+DiscoverFragment
+-> FirebaseFirestore
+-> DiscoverItem
+-> ContentListActivity, LeaderboardActivity, InviteFriendsActivity, MainActivity
+
+ContentListActivity
+-> FirebaseFirestore
+-> BookItem
+-> BookAdapter
+-> BookDetailActivity
+
+LeaderboardActivity
+-> FirebaseFirestore
+-> BookItem
+-> BookDetailActivity
+
+InviteFriendsActivity
+-> FirebaseFirestore
+-> BookItem
+-> ACTION_SEND
+
+BookDetailActivity
+-> AudioPlayerService
+-> DownloadWorker
+-> SleepTimerReceiver
+-> ACTION_SEND
+-> UserDataStore
+
+AudioPlayerService
+-> MediaPlayer
+-> Notification
+-> UserDataStore
+
+DownloadWorker
+-> HttpURLConnection
+-> File
+-> Notification
+-> UserDataStore
+
+LibraryFragment
+-> UserDataStore
+-> LibBookItem
+-> BookDetailActivity
+-> FileProvider
+-> ACTION_SEND audio
+
+ChallengeFragment
+-> UserDataStore
+-> ChallengeItem
+-> MainActivity.switchToBooksSubTab()
+
+PodCourseFragment
+-> FirebaseFirestore
+-> PodCourseItem
+
+UserProfileActivity
+-> FirebaseAuth
+-> ACTION_PICK image
+
+SleepTimerReceiver
+-> AudioPlayerService ACTION_PAUSE
+
+BatteryLowReceiver
+-> Android ACTION_BATTERY_LOW
+-> Notification
+-> MainActivity PendingIntent
