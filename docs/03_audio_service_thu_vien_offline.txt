@@ -19,6 +19,7 @@ Phan audio can dam bao:
 - BookAdapter
 - BookDetailActivity
 - AudioPlayerService
+- MediaSession / PlaybackState cua Android
 - MainActivity
 - UserDataStore
 - DownloadWorker
@@ -127,28 +128,114 @@ Flow:
 playAudio(url)
 -> stopProgressTracking()
 -> currentAudioUrl = url
+-> isPlayerPrepared = false
+-> isPreparing = true
+-> cachedDurationMs = 0
+-> lastKnownPositionMs = 0
 -> mediaPlayer.reset()
 -> applyAudioAttributes()
 -> mediaPlayer.setDataSource(url)
+-> updateMediaMetadata()
+-> updateMediaSessionState()
+-> updateMediaNotification()
 -> mediaPlayer.setOnPreparedListener(...)
 -> mediaPlayer.setOnCompletionListener(...)
 -> mediaPlayer.setOnErrorListener(...)
 -> mediaPlayer.prepareAsync()
 
 onPrepared:
+-> isPreparing = false
+-> isPlayerPrepared = true
+-> cachedDurationMs = mediaPlayer.getDuration()
 -> applyPlaybackSpeed()
 -> mediaPlayer.start()
+-> updateMediaMetadata()
+-> updateMediaSessionState()
+-> updateMediaNotification()
 -> startProgressTracking()
 -> listener.onPrepared(duration)
 
 onCompletion:
 -> stopProgressTracking()
+-> lastKnownPositionMs = cachedDurationMs
 -> UserDataStore.saveRecentBook(... position = duration)
+-> updateMediaSessionState()
+-> updateMediaNotification()
 -> listener.onCompletion()
 
 Tai sao prepareAsync:
 - prepare() co the block UI/thread service.
 - prepareAsync() cho MediaPlayer load audio bat dong bo.
+
+Luu y loi da sua:
+- MediaPlayer co state rieng. Sau reset()/setDataSource(), player chua duoc prepared.
+- Neu goi getDuration() hoac getCurrentPosition() luc nay, Android log loi:
+  "MediaPlayer Error (-38,0)" / "Attempt to call getDuration in wrong state".
+- Vi vay AudioPlayerService co cac bien:
+  + isPreparing: dang load audio bang prepareAsync().
+  + isPlayerPrepared: chi true sau onPrepared().
+  + cachedDurationMs: duration da doc duoc sau khi prepared.
+  + lastKnownPositionMs: vi tri gan nhat hop le.
+- getDuration()/getCurrentPosition() chi goi MediaPlayer that khi isPlayerPrepared = true.
+- Notification/MediaSession van co the cap nhat trong luc preparing, nhung chi dung duration/position cache = 0.
+
+
+7b. Media notification tren thanh thong bao / lockscreen
+-------------------------------------------------------
+AudioPlayerService hien notification bang Notification.MediaStyle va MediaSession.
+
+Thanh thong bao Android co the hien:
+- Ten sach dang phat.
+- Tac gia.
+- Thanh tien trinh phat.
+- Nut lui 15s.
+- Nut tam dung / tiep tuc.
+- Nut toi 30s.
+- Thanh seek co the keo trai/phai de tua den vi tri mong muon neu System UI cua may ho tro.
+
+Class/ham lien quan trong AudioPlayerService:
+- createMediaSession()
+  + tao MediaSession.
+  + khai bao callback onPlay(), onPause(), onSeekTo(), onRewind(), onFastForward().
+
+- updateMediaMetadata()
+  + day title, author, album, duration vao MediaSession.
+  + chi day duration khi MediaPlayer da prepared va duration > 0.
+
+- updateMediaSessionState()
+  + day state PLAYING/PAUSED/BUFFERING/NONE.
+  + day currentPosition va playbackSpeed.
+  + khai bao actions PLAY, PAUSE, PLAY_PAUSE, SEEK_TO, REWIND, FAST_FORWARD.
+
+- buildMediaNotification()
+  + tao notification MediaStyle.
+  + gan mediaSession token.
+  + add action ACTION_REWIND, ACTION_TOGGLE_PLAYBACK, ACTION_FAST_FORWARD.
+  + setProgress(duration, currentPosition, false).
+  + chi hien progress khi duration > 0.
+
+- updateMediaNotification()
+  + NotificationManager.notify() de cap nhat UI moi giay khi dang phat.
+
+Flow khi bam nut tren notification:
+
+Nguoi dung bam pause/play/lui/toi tren notification
+-> PendingIntent.getService()
+-> AudioPlayerService.onStartCommand()
+-> action:
+   + ACTION_TOGGLE_PLAYBACK: pauseAudio() hoac resumeAudio()
+   + ACTION_REWIND: rewind(15000)
+   + ACTION_FAST_FORWARD: fastForward(30000)
+
+Flow khi keo thanh seek tren notification/lockscreen:
+
+Android System UI
+-> MediaSession.Callback.onSeekTo(pos)
+-> AudioPlayerService.seekTo((int) pos)
+-> neu isPlayerPrepared = true thi MediaPlayer.seekTo(pos)
+-> savePlaybackProgress()
+-> updateMediaSessionState()
+-> updateMediaNotification()
 
 
 8. Luu tien trinh nghe va thu thach
@@ -158,7 +245,7 @@ AudioPlayerService co Handler progressHandler va progressRunnable.
 Flow moi 1 giay:
 
 progressRunnable.run()
--> neu mediaPlayer dang playing:
+-> neu isPlayerPrepared = true va mediaPlayer dang playing:
    + delta = now - lastProgressTickAt
    + UserDataStore.recordListening(
        title, author, cover, audioUrl,
@@ -166,6 +253,8 @@ progressRunnable.run()
        duration,
        delta
      )
+   + updateMediaSessionState()
+   + updateMediaNotification()
    + postDelayed(this, 1000)
 
 UserDataStore.recordListening():
@@ -231,6 +320,17 @@ AudioPlayerService:
   + luu currentPlaybackSpeed
   + neu Android >= M:
     -> mediaPlayer.setPlaybackParams(speed)
+  + cap nhat MediaSession/notification de thanh thong bao biet trang thai moi
+
+Notification / lockscreen:
+- Bam nut lui 15s tren notification:
+  + ACTION_REWIND -> rewind(15000)
+- Bam nut tam dung/tiep tuc:
+  + ACTION_TOGGLE_PLAYBACK -> pauseAudio() hoac resumeAudio()
+- Bam nut toi 30s:
+  + ACTION_FAST_FORWARD -> fastForward(30000)
+- Keo thanh progress:
+  + MediaSession.Callback.onSeekTo(pos) -> seekTo(pos)
 
 
 11. Hen gio tat nhac

@@ -141,63 +141,83 @@ Controller chinh:
    - Bind title/author/cover vao item_book.xml.
    - Bat click item -> tao Intent mo BookDetailActivity.
 
-7. BookDetailActivity
+7. DiscoverAdapter
+   - File rieng trong package adapter.
+   - Nhan List<DiscoverItem>.
+   - Bind card Kham pha vao item_discover_card.xml.
+   - Bat click card de mo ContentListActivity, LeaderboardActivity, InviteFriendsActivity,
+     hoac chuyen tab trong MainActivity.
+
+8. LeaderboardAdapter
+   - File rieng trong package adapter.
+   - Nhan List<BookItem> cho man Bang xep hang.
+   - Bind rank, title, author, cover vao item_leaderboard.xml.
+   - Bat click item -> tao Intent mo BookDetailActivity.
+
+9. InviteAdapter
+   - File rieng trong package adapter.
+   - Nhan List<BookItem>, Set<String> selectedBooks va callback onSelectionChanged.
+   - Bind item_invite_book.xml, quan ly checkbox tung sach.
+   - Khi checkbox doi trang thai thi bao ve InviteFriendsActivity de cap nhat nut Share.
+
+10. BookDetailActivity
    - Dieu khien man chi tiet sach.
    - Bind AudioPlayerService.
    - Xu ly play/pause, seekbar, tua, toc do, hen gio, share, download.
 
-8. AudioPlayerService
+11. AudioPlayerService
    - Khong phai MVC UI controller, nhung la background controller cho audio.
    - Quan ly MediaPlayer.
+   - Quan ly MediaSession/PlaybackState de Android hien media notification co seek bar.
    - Luu tien trinh nghe vao UserDataStore.
 
-9. DownloadWorker
+12. DownloadWorker
    - Background controller cho viec tai file offline.
    - Luu metadata sach da tai vao UserDataStore.
 
-10. LibraryFragment
+13. LibraryFragment
    - Dieu khien fragment_library.xml.
    - Lay "Gan day" va "Da tai" tu UserDataStore.
    - Bam sach -> BookDetailActivity.
    - Nhan giu sach da tai -> popup xoa/chia se.
 
-11. ChallengeFragment
+14. ChallengeFragment
    - Lay ChallengeStats tu UserDataStore.
    - Tao ChallengeItem theo ngay/thang.
    - Hien bang ChallengeAdapter.
 
-12. DiscoverFragment
+15. DiscoverFragment
    - Lay danh sach card tu Firestore collection "discover".
-   - Bat click card de mo ContentListActivity, LeaderboardActivity, InviteFriendsActivity,
-     hoac chuyen tab trong MainActivity.
+   - Gan du lieu vao RecyclerView bang DiscoverAdapter.
 
-13. ContentListActivity
+16. ContentListActivity
    - Nhan CONTENT_TYPE tu Intent.
    - Chon Firestore collection tuong ung.
    - Hien danh sach sach noi bat va tat ca sach.
 
-14. LeaderboardActivity
+17. LeaderboardActivity
    - Spinner chon danh muc.
    - Doc Firestore, xao tron va hien ranking.
-   - Click item -> BookDetailActivity.
+   - Gan du lieu vao RecyclerView bang LeaderboardAdapter.
 
-15. InviteFriendsActivity
+18. InviteFriendsActivity
    - Gom sach tu nhieu collection.
-   - Cho chon checkbox.
+   - Giu selectedBooks va cap nhat nut Share.
+   - Gan du lieu vao RecyclerView bang InviteAdapter.
    - Tao ACTION_SEND de chia se loi moi.
 
-16. UserProfileActivity
+19. UserProfileActivity
    - Hien profile user Firebase.
    - Chon avatar bang ACTION_PICK.
    - Luu ten/email/password.
    - Dang xuat ve LoginActivity.
 
-17. SleepTimerReceiver
+20. SleepTimerReceiver
    - Controller cho broadcast hen gio.
    - Nhan broadcast tu AlarmManager.
    - Gui ACTION_PAUSE den AudioPlayerService.
 
-18. BatteryLowReceiver
+21. BatteryLowReceiver
    - Controller cho broadcast pin yeu.
    - Nhan ACTION_BATTERY_LOW tu Android.
    - Tao notification canh bao pin yeu.

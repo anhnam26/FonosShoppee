@@ -1,11 +1,8 @@
 package com.example.fonosshoppee;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -13,12 +10,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
+import com.example.fonosshoppee.adapter.LeaderboardAdapter;
 import com.example.fonosshoppee.model.BookItem;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -165,67 +161,4 @@ public class LeaderboardActivity extends AppCompatActivity {
         }).addOnFailureListener(e -> Toast.makeText(this, "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show());
     }
 
-    // ================= ADAPTER NỘI BỘ =================
-    class LeaderboardAdapter extends RecyclerView.Adapter<LeaderboardAdapter.ViewHolder> {
-        private List<BookItem> items;
-
-        public LeaderboardAdapter(List<BookItem> items) {
-            this.items = items;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_leaderboard, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            BookItem item = items.get(position);
-
-            holder.tvRank.setText(String.valueOf(position + 1));
-
-            // Đổi màu sắc nổi bật cho Top 3
-            if (position == 0) holder.tvRank.setTextColor(Color.parseColor("#FFD700")); // Vàng Top 1
-            else if (position == 1) holder.tvRank.setTextColor(Color.parseColor("#C0C0C0")); // Bạc Top 2
-            else if (position == 2) holder.tvRank.setTextColor(Color.parseColor("#CD7F32")); // Đồng Top 3
-            else holder.tvRank.setTextColor(Color.parseColor("#6D7885")); // Xám thường
-
-            holder.tvTitle.setText(item.getTitle());
-            holder.tvAuthor.setText(item.getAuthor() != null ? item.getAuthor() : "Fonos Shoppee");
-
-            if (item.getCoverUrl() != null && !item.getCoverUrl().isEmpty()) {
-                Glide.with(holder.itemView.getContext()).load(item.getCoverUrl()).into(holder.ivCover);
-            } else {
-                holder.ivCover.setImageResource(android.R.color.darker_gray);
-            }
-
-            // Click vào bất kỳ dòng nào đều bay về trang Detail để nghe và điều khiển phát nhạc ngầm
-            holder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(LeaderboardActivity.this, BookDetailActivity.class);
-                intent.putExtra("BOOK_TITLE", item.getTitle());
-                intent.putExtra("BOOK_AUTHOR", item.getAuthor());
-                intent.putExtra("BOOK_COVER", item.getCoverUrl());
-                intent.putExtra("AUDIO_URL", item.getAudioUrl());
-                startActivity(intent);
-            });
-        }
-
-        @Override
-        public int getItemCount() { return items.size(); }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvRank, tvTitle, tvAuthor;
-            ImageView ivCover;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                tvRank = itemView.findViewById(R.id.tvRank);
-                tvTitle = itemView.findViewById(R.id.tvTitle);
-                tvAuthor = itemView.findViewById(R.id.tvAuthor);
-                ivCover = itemView.findViewById(R.id.ivCover);
-            }
-        }
-    }
 }

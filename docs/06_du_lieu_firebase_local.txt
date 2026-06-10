@@ -210,7 +210,43 @@ AudioPlayerService:
 - BOOK_AUTHOR
 - BOOK_COVER
 - Action:
+  + ACTION_PLAY
   + ACTION_PAUSE
+  + ACTION_TOGGLE_PLAYBACK
+  + ACTION_REWIND
+  + ACTION_FAST_FORWARD
+
+Trang thai noi bo AudioPlayerService:
+- isPreparing
+  + true trong luc MediaPlayer.prepareAsync() dang load audio.
+- isPlayerPrepared
+  + true sau khi MediaPlayer.onPrepared() chay.
+  + cac ham getDuration(), getCurrentPosition(), seekTo(), rewind(), fastForward()
+    chi goi MediaPlayer that khi bien nay true.
+- cachedDurationMs
+  + duration hop le doc duoc sau onPrepared().
+- lastKnownPositionMs
+  + vi tri phat gan nhat hop le.
+
+MediaSession / PlaybackState:
+- metadata:
+  + title
+  + artist/author
+  + album/app name
+  + duration
+- playback state:
+  + STATE_PLAYING
+  + STATE_PAUSED
+  + STATE_NONE
+  + current position
+  + playback speed
+- actions ho tro tu notification/lockscreen:
+  + ACTION_PLAY
+  + ACTION_PAUSE
+  + ACTION_PLAY_PAUSE
+  + ACTION_SEEK_TO
+  + ACTION_REWIND
+  + ACTION_FAST_FORWARD
 
 Invite/User share:
 - ACTION_SEND
@@ -250,7 +286,11 @@ Android 8+ can NotificationChannel.
 Project co:
 - AudioPlayerChannel
   + AudioPlayerService
-  + notification foreground audio
+  + foreground media notification
+  + dung MediaSession/PlaybackState/Notification.MediaStyle
+  + hien ten sach, tac gia, progress
+  + co nut pause/resume, lui 15s, toi 30s
+  + co the seek neu System UI ho tro
 
 - download_channel
   + DownloadWorker
