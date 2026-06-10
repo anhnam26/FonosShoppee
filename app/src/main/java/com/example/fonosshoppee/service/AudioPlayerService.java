@@ -528,6 +528,7 @@ public class AudioPlayerService extends Service {
         lastProgressTickAt = System.currentTimeMillis();
         progressHandler.removeCallbacks(progressRunnable);
         progressHandler.postDelayed(progressRunnable, 1000);
+
     }
 
     private void stopProgressTracking() {
@@ -548,6 +549,7 @@ public class AudioPlayerService extends Service {
                 getDuration()
         );
     }
+
 
     private int getPreparedDuration(MediaPlayer player) {
         try {
