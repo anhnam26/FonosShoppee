@@ -47,8 +47,13 @@ Trong project:
 - AudioPlayerService la Service foreground de giu audio.
 - Service lifecycle chay tren MainThread.
 - MediaPlayer.prepareAsync() dung bat dong bo noi bo cua MediaPlayer.
+- Trong luc prepareAsync() dang chay, AudioPlayerService de isPreparing = true va
+  isPlayerPrepared = false.
+- Chi sau onPrepared(), service moi doc duration/currentPosition that tu MediaPlayer.
 - Playback audio do MediaPlayer/Android media framework quan ly, khong phai UI thread tu choi tung byte audio.
 - progressHandler trong AudioPlayerService post moi 1 giay tren MainThread de luu tien trinh nhe.
+- AudioPlayerService tao MediaSession va PlaybackState de Android System UI dieu khien
+  play/pause/seek/lui/toi tu notification hoac lockscreen.
 
 
 3. Khi chuyen qua ung dung khac, audio chay nhu the nao?
@@ -57,11 +62,13 @@ Flow:
 
 Nguoi dung dang nghe sach
 -> AudioPlayerService da startForegroundService
--> Android hien foreground notification
+-> Android hien foreground media notification
+-> MediaSession bao cho System UI biet title, author, duration, current position
 -> Nguoi dung bam Home hoac mo ung dung khac
 -> Activity co the onPause/onStop
 -> AudioPlayerService van con song neu chua bi stop/destroy
 -> MediaPlayer tiep tuc phat audio
+-> Nguoi dung van co the pause/resume/lui/toi/seek tren notification neu may ho tro
 
 No khong phai tao "service khac".
 No la cung AudioPlayerService dang ton tai trong process app.
@@ -220,12 +227,24 @@ Project dung PendingIntent o:
    - PendingIntent.getActivity()
    - Khi bam notification pin yeu, Android mo MainActivity.
 
+3. AudioPlayerService media notification
+   - PendingIntent.getService()
+   - ACTION_TOGGLE_PLAYBACK: doi play/pause.
+   - ACTION_REWIND: lui 15 giay.
+   - ACTION_FAST_FORWARD: toi 30 giay.
+   - Cac action seek/lui/toi chi tac dong khi isPlayerPrepared = true.
+
 
 12. Notification trong project
 ------------------------------
 1. AudioPlayerService:
-   - Foreground notification "Fonos Shoppee Dang Phat".
+   - Foreground media notification "Fonos Shoppee".
    - De service duoc phep chay dai hon khi app ra background.
+   - Dung Notification.MediaStyle + MediaSession.
+   - Co progress, pause/resume, lui 15s, toi 30s.
+   - Co the seek bang thanh phat tren notification/lockscreen neu Android System UI ho tro.
+   - Khi audio dang preparing, notification co the hien thong tin sach nhung chua doc duration
+     truc tiep tu MediaPlayer de tranh loi wrong state/Error (-38,0).
 
 2. DownloadWorker:
    - Notification progress khi dang tai.
@@ -255,6 +274,9 @@ AudioPlayerService:
 - Service foreground.
 - Lifecycle mac dinh MainThread.
 - MediaPlayer xu ly playback async/noi bo.
+- Co guard isPreparing/isPlayerPrepared de tranh goi getDuration/getCurrentPosition
+  khi MediaPlayer chua prepared.
+- MediaSession/PlaybackState dieu phoi media controls tren notification/lockscreen.
 
 DownloadWorker:
 - Background thread do WorkManager quan ly.

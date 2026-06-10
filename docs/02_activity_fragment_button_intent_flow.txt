@@ -278,8 +278,10 @@ Button / Event:
   -> WorkManager.enqueue()
 
 Intent/Service:
-- startForegroundService(AudioPlayerService) de service co notification.
+- startForegroundService(AudioPlayerService) de service co media notification.
 - bindService(AudioPlayerService) de Activity goi ham play/pause/seek.
+- AudioPlayerService cap nhat MediaSession/PlaybackState, vi vay notification/lockscreen
+  co nut pause/resume, lui 15s, toi 30s va thanh seek neu Android System UI ho tro.
 - AlarmManager tao PendingIntent broadcast den SleepTimerReceiver.
 
 
@@ -292,10 +294,11 @@ Flow:
 onCreateView()
 -> db.collection("discover").get()
 -> document.toObject(DiscoverItem.class)
+-> DiscoverFragment gan List<DiscoverItem> vao DiscoverAdapter.java
 -> DiscoverAdapter hien card dang GridLayoutManager 2 cot
 -> fullWidth card chiem 2 cot
 
-Click card trong DiscoverAdapter:
+Click card trong DiscoverAdapter.java:
 
 - Neu title chua "Truyen Ngu" hoac "Truyen ngu & Nhac":
   -> mo BottomSheetDialog dialog_choose_content.xml
@@ -373,6 +376,7 @@ Flow:
 onCreate()
 -> setup Spinner categoryNames
 -> setup RecyclerView
+-> tao LeaderboardAdapter.java voi bookList
 -> spinnerCategory.setOnItemSelectedListener()
 
 Event:
@@ -390,7 +394,7 @@ Event:
   -> loadRankingData(collectionNames[position])
 
 - Click item ranking:
-  -> Intent BookDetailActivity
+  -> LeaderboardAdapter tao Intent BookDetailActivity
   -> putExtra BOOK_TITLE, BOOK_AUTHOR, BOOK_COVER, AUDIO_URL
 
 
@@ -402,10 +406,12 @@ Class: InviteFriendsActivity.java
 Flow:
 onCreate()
 -> setup RecyclerView
+-> tao InviteAdapter.java voi bookList, selectedBooks va callback updateShareButton()
 -> loadAllBooks()
 -> lay sach tu nhieu collection Firebase
 -> loc trung title
 -> shuffle
+-> adapter.notifyDataSetChanged()
 -> hien checkbox list
 
 Button / Event:
@@ -413,8 +419,9 @@ Button / Event:
   -> finish()
 
 - Click item hoac checkbox:
-  -> check/uncheck sach
+  -> InviteAdapter check/uncheck sach
   -> selectedBooks add/remove title
+  -> callback updateShareButton(selectedCount)
   -> cap nhat btnShare text va enabled
 
 - btnShare:

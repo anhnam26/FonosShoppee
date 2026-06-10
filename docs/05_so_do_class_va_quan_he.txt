@@ -127,11 +127,17 @@ BookDetailActivity
 -> bindService(AudioPlayerService)
 -> LocalBinder.getService()
 -> audioService.playAudio(url)
+-> isPreparing = true, isPlayerPrepared = false
 -> MediaPlayer.setDataSource(url)
 -> MediaPlayer.prepareAsync()
 -> onPrepared()
+-> isPreparing = false, isPlayerPrepared = true
+-> cachedDurationMs = duration
 -> MediaPlayer.start()
 -> AudioPlayerService.startProgressTracking()
+-> AudioPlayerService.updateMediaSessionState()
+-> AudioPlayerService.updateMediaNotification()
+-> Android media notification/lockscreen hien progress va nut dieu khien
 -> UserDataStore.recordListening()
 
 MainActivity
@@ -140,6 +146,46 @@ MainActivity
 -> miniPlayerBtnPlay:
    + pauseAudio()
    + resumeAudio()
+
+
+5b. So do media notification tren thanh thong bao
+-------------------------------------------------
+
+AudioPlayerService.onCreate()
+-> createNotificationChannel()
+-> createMediaSession()
+
+AudioPlayerService.playAudio()
+-> isPreparing = true
+-> updateMediaMetadata()
+-> buildMediaNotification()
+-> startForeground(notification)
+-> Notification.MediaStyle gan MediaSession token
+
+Notification hien:
+- ten sach / tac gia
+- progress hien tai / tong thoi luong
+- nut lui 15s
+- nut dung/tiep tuc
+- nut toi 30s
+
+User bam nut tren notification:
+-> PendingIntent.getService()
+-> AudioPlayerService.onStartCommand()
+   + ACTION_REWIND -> rewind 15 giay
+   + ACTION_TOGGLE_PLAYBACK -> pause/resume
+   + ACTION_FAST_FORWARD -> toi 30 giay
+
+User keo thanh progress tren notification/lockscreen neu System UI ho tro:
+-> MediaSession.Callback.onSeekTo(positionMs)
+-> AudioPlayerService.seekTo(positionMs) neu isPlayerPrepared = true
+-> updateMediaSessionState()
+-> updateMediaNotification()
+
+Guard tranh loi MediaPlayer wrong state:
+-> Truoc onPrepared, getDuration()/getCurrentPosition() tra ve cache/0
+-> Sau onPrepared, moi doc duration/currentPosition that tu MediaPlayer
+-> Neu khong guard, Android co the bao Error (-38,0)
 
 
 6. So do hen gio tat nhac
@@ -291,6 +337,32 @@ InviteFriendsActivity
 -> ACTION_SEND text/plain
 
 
+14b. So do adapter da tach rieng
+--------------------------------
+
+DiscoverFragment
+-> DiscoverAdapter.java
+-> item_discover_card.xml
+-> callback xu ly click:
+   + mo ContentListActivity
+   + mo LeaderboardActivity
+   + mo InviteFriendsActivity
+   + chuyen tab trong MainActivity
+
+LeaderboardActivity
+-> LeaderboardAdapter.java
+-> item_leaderboard.xml
+-> click item
+-> BookDetailActivity
+
+InviteFriendsActivity
+-> InviteAdapter.java
+-> item_invite_book.xml
+-> selectedBooks Set<String>
+-> callback updateShareButton()
+-> ACTION_SEND text/plain
+
+
 15. Bang quan he nhanh cac class
 --------------------------------
 
@@ -321,6 +393,7 @@ AudiobooksFragment/EbooksFragment/SummariesFragment
 DiscoverFragment
 -> FirebaseFirestore
 -> DiscoverItem
+-> DiscoverAdapter
 -> ContentListActivity, LeaderboardActivity, InviteFriendsActivity, MainActivity
 
 ContentListActivity
@@ -332,11 +405,13 @@ ContentListActivity
 LeaderboardActivity
 -> FirebaseFirestore
 -> BookItem
+-> LeaderboardAdapter
 -> BookDetailActivity
 
 InviteFriendsActivity
 -> FirebaseFirestore
 -> BookItem
+-> InviteAdapter
 -> ACTION_SEND
 
 BookDetailActivity
@@ -348,7 +423,12 @@ BookDetailActivity
 
 AudioPlayerService
 -> MediaPlayer
--> Notification
+-> isPreparing / isPlayerPrepared
+-> cachedDurationMs / lastKnownPositionMs
+-> MediaSession
+-> PlaybackState
+-> Notification.MediaStyle
+-> PendingIntent media actions
 -> UserDataStore
 
 DownloadWorker

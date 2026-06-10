@@ -49,9 +49,11 @@ app/src/main/java/com/example/fonosshoppee
 - Adapter:
   + BookAdapter.java
   + BooksPagerAdapter.java
-  + Adapter noi bo trong cac Fragment/Activity:
-    DiscoverAdapter, ChallengeAdapter, LibBookAdapter, MenuAdapter,
-    MainCategoryAdapter, PodAdapter, InviteAdapter, LeaderboardAdapter.
+  + DiscoverAdapter.java
+  + LeaderboardAdapter.java
+  + InviteAdapter.java
+  + Adapter noi bo van nam trong Fragment:
+    ChallengeAdapter, LibBookAdapter, MenuAdapter, MainCategoryAdapter, PodAdapter.
 
 - Model:
   + BookItem.java
@@ -139,6 +141,8 @@ Book item duoc bam
 -> onPrepared()
 -> MediaPlayer.start()
 -> Service cap nhat tien trinh nghe vao UserDataStore
+-> Service cap nhat MediaSession/MediaStyle notification de Android hien thanh phat,
+   nut lui 15s, tam dung/tiep tuc, toi 30s va thanh tua seek.
 -> MainActivity mini player co the dieu khien pause/resume.
 
 
@@ -191,6 +195,10 @@ ChallengeFragment.onCreateView/onResume
 ----------------------------
 - AudioPlayerService:
   Chay foreground service de phat audio va giu nhac tiep tuc khi roi man chi tiet.
+  Service dung MediaSession + PlaybackState + Notification.MediaStyle de Android
+  hien media notification tren thanh thong bao/lockscreen. Notification nay co
+  tien trinh phat, nut pause/resume, lui 15s, toi 30s va cho phep seek neu
+  System UI cua may ho tro.
 
 - DownloadWorker:
   Chay background worker de tai file audio, khong lam treo UI.
@@ -228,7 +236,8 @@ ChallengeFragment.onCreateView/onResume
 - Layout XML la View.
 - Model class chi giu du lieu.
 - Adapter noi Model voi RecyclerView item layout.
-- Intent dung de chuyen Activity, gui action share, gui ACTION_PAUSE, mo gallery.
+- Intent dung de chuyen Activity, gui action share, gui ACTION_PAUSE, ACTION_TOGGLE_PLAYBACK,
+  ACTION_REWIND, ACTION_FAST_FORWARD, mo gallery.
 - Service dung cho viec phat audio lau dai.
 - Worker dung cho viec tai file background.
 - BroadcastReceiver dung de nhan su kien he thong/app nhu hen gio tat nhac va pin yeu.
